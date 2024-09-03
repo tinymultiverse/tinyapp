@@ -1,0 +1,182 @@
+syntax = "proto3";
+
+package tiny.app.proto;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+option go_package = "github.com/tinymultiverse/tinyapp/api/v1/proto";
+
+// API used to interact with tiny apps
+service TinyAppServer {
+    // Creates a new app.
+    rpc CreateTinyApp(CreateTinyAppRequest) returns (CreateTinyAppResponse) {
+        option (google.api.http) = {
+            post: "/v1/app"
+            body: "*"
+        };
+    };
+    
+    // Gets list of apps
+    rpc ListTinyApps(ListTinyAppsRequest) returns (ListTinyAppsResponse) {
+        option (google.api.http) = {
+            get: "/v1/apps"
+        };
+    };
+
+    // Updates an app
+    rpc UpdateTinyApp(UpdateTinyAppRequest) returns (UpdateTinyAppResponse) {
+        option (google.api.http) = {
+            patch: "/v1/app"
+            body: "*"
+        };
+    };
+
+    // Deletes an app
+    rpc DeleteTinyApp(DeleteTinyAppRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            delete: "/v1/app"
+        };
+    };
+
+    rpc GetTinyAppLogs(GetTinyAppLogsRequest) returns (GetTinyAppLogsResponse) {
+        option (google.api.http) = {
+            get: "/v1/app-logs"
+        };
+    }
+
+    // Gets access metrics for a tiny app
+    rpc GetTinyAppAccessMetrics(GetTinyAppAccessMetricsRequest) returns (GetTinyAppAccessMetricsResponse) {
+        option (google.api.http) = {
+            get: "/v1/app-access-metrics"
+        };
+    }
+
+    // Gets CPU and memory metrics for a tiny app
+    rpc GetTinyAppUsageMetrics(GetTinyAppUsageMetricsRequest) returns (GetTinyAppUsageMetricsResponse) {
+        option (google.api.http) = {
+            get: "/v1/app-usage-metrics"
+        };
+    }
+};
+
+message VolumeClaim {
+    string name = 1;
+    string subPath = 2;
+    string mountPath = 3;
+}
+
+message Volume {
+    string claimName = 1;
+}
+
+message EnvVar {
+    string name = 1;
+    string value = 2;
+}
+
+message GitConfig {
+    string url = 1; // Url to clone
+    string token = 2; // Git token for authentication. Will be empty in response.
+    string ref = 3; // Branch or tag name depending on is_tag
+    bool is_tag = 4; // If true, ref points to to tag instead of branch
+}
+
+enum AppType {
+    APP_TYPE_UNKNOWN = 0;
+    APP_TYPE_STREAM_LIT = 1;
+    APP_TYPE_DASH = 2;
+}
+
+enum SourceType {
+    SOURCE_TYPE_UNKNOWN = 0;
+    SOURCE_TYPE_GIT = 1;
+    SOURCE_TYPE_FILE_SYSTEM = 2;
+}
+
+message TinyAppDetail {
+    string name = 1;
+    string description = 2;
+    string documentation = 3;
+    string image = 4;
+    AppType app_type = 5;
+    SourceType source_type = 6;
+    GitConfig git_config = 7;
+    string main_file_path = 8;
+    repeated EnvVar env = 9;
+    repeated VolumeClaim volume_claims = 10;
+    string mainVolumeClaimName = 11;
+}
+
+message TinyAppRelease {
+    string id = 1;
+    string app_url = 2;
+    string creation_time_stamp = 3;
+    string app_image = 4;
+}
+
+message TinyApp {
+    TinyAppRelease app_release = 1;
+    TinyAppDetail app_detail = 2;
+}
+
+message CreateTinyAppRequest {
+    TinyAppDetail app_detail = 1;
+}
+
+message CreateTinyAppResponse {
+    TinyAppRelease app_release = 1;
+}
+
+message GetTinyAppAccessMetricsRequest {
+    string app_id = 1;
+    string time_period = 2;
+}
+
+message GetTinyAppAccessMetricsResponse {
+    int32 number_of_access = 1;
+}
+
+message GetTinyAppUsageMetricsRequest {
+    string app_id = 1;
+    string time_period = 2;
+}
+
+message GetTinyAppUsageMetricsResponse {
+    double cpu_usage = 1;
+    double cpu_limit = 2;
+    double memory_usage = 3;
+    double memory_limit = 4;
+    double percent_cpu_used = 5;
+    double percent_memory_used = 6;
+}
+
+message ListTinyAppsRequest {
+    string app_id = 1;
+    TinyAppDetail app_detail = 2;
+}
+
+message ListTinyAppsResponse {
+    repeated TinyApp apps = 1;
+}
+
+message UpdateTinyAppRequest {
+    string app_id = 1;
+    TinyAppDetail app_detail = 2;
+}
+
+message UpdateTinyAppResponse {
+    TinyAppRelease app_release = 1;
+}
+
+message DeleteTinyAppRequest {
+    string app_id = 1;
+}
+
+message GetTinyAppLogsRequest {
+    string app_id = 1;
+}
+
+message GetTinyAppLogsResponse {
+    string logs = 1;
+}

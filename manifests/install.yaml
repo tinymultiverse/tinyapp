@@ -1,0 +1,290 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: tinyapps.tinymultiverse.ai
+spec:
+  group: tinymultiverse.ai
+  names:
+    kind: TinyApp
+    listKind: TinyAppList
+    plural: tinyapps
+    singular: tinyapp
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              type: object
+              x-kubernetes-map-type: atomic
+              x-kubernetes-preserve-unknown-fields: true
+            status:
+              type: object
+              x-kubernetes-map-type: atomic
+              x-kubernetes-preserve-unknown-fields: true
+          required:
+            - metadata
+            - spec
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tinyapp-controller
+  namespace: tinyapp
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tinyapp-server
+  namespace: tinyapp
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tinyapp-controller
+  namespace: tinyapp
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - configmaps
+      - secrets
+    verbs:
+      - "*"
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - replicasets
+    verbs:
+      - "*"
+  - apiGroups:
+      - extensions
+      - networking.k8s.io
+    resources:
+      - ingresses
+    verbs:
+      - "*"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tinyapp-controller
+  namespace: tinyapp
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: tinyapp-controller
+subjects:
+  - kind: ServiceAccount
+    name: tinyapp-controller
+    namespace: tinyapp
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tinyapp-server
+  namespace: tinyapp
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - "*"
+  - apiGroups:
+      - ""
+    resources:
+      - events
+      - pods
+      - pods/log
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tinyapp-server
+  namespace: tinyapp
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: tinyapp-server
+subjects:
+  - kind: ServiceAccount
+    name: tinyapp-server
+    namespace: tinyapp
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tinyapp
+  namespace: tinyapp
+rules:
+  - apiGroups:
+      - "tinymultiverse.ai"
+    resources:
+      - tinyapps
+      - tinyapps/status
+      - tinyapps/finalizers
+    verbs:
+      - "*"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tinyapp
+  namespace: tinyapp
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: tinyapp
+subjects:
+  - kind: ServiceAccount
+    name: tinyapp-controller
+    namespace: tinyapp
+  - kind: ServiceAccount
+    name: tinyapp-server
+    namespace: tinyapp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: tinyapp-controller
+    app.kubernetes.io/part-of: tinyapp
+  name: tinyapp-controller
+  namespace: tinyapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tinyapp-controller
+      app.kubernetes.io/part-of: tinyapp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tinyapp-controller
+        app.kubernetes.io/part-of: tinyapp
+      name: tinyapp-controller
+    spec:
+      containers:
+        - command:
+            - /bin/tinyapp-controller
+          env:
+            - name: TINY_APP_NAMESPACE
+              value: tinyapp
+            - name: APP_SERVICE_ACCOUNT
+              value: default
+            - name: GATEWAY_IMAGE
+              value: quay.io/tinymultiverse/tinyapp-gateway:latest
+            - name: METRICS_ENABLED
+              value: "false"
+            - name: GIT_SYNC_IMAGE
+              value: registry.k8s.io/git-sync/git-sync:v3.6.8
+          image: quay.io/tinymultiverse/tinyapp-controller:latest
+          imagePullPolicy: Always
+          name: controller
+          resources:
+            limits:
+              cpu: 100m
+              memory: 1Gi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+      serviceAccountName: tinyapp-controller
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: tinyapp-server
+    app.kubernetes.io/part-of: tinyapp
+  name: tinyapp-server
+  namespace: tinyapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tinyapp-server
+      app.kubernetes.io/part-of: tinyapp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tinyapp-server
+        app.kubernetes.io/part-of: tinyapp
+    spec:
+      containers:
+        - name: tinyapp-server
+          image: quay.io/tinymultiverse/tinyapp-server:latest
+          imagePullPolicy: Always
+          env:
+            - name: TINY_APP_NAMESPACE
+              value: tinyapp
+            - name: APP_INGRESS_DOMAIN
+              value: <your-app-ingress-domain>
+          ports:
+            - containerPort: 8889
+              name: httpport
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 10
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            successThreshold: 1
+            tcpSocket:
+              port: httpport
+            timeoutSeconds: 1
+          readinessProbe:
+            failureThreshold: 10
+            initialDelaySeconds: 5
+            periodSeconds: 7
+            successThreshold: 1
+            tcpSocket:
+              port: httpport
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: 100m
+              memory: 1Gi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+      serviceAccountName: tinyapp-server
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: tinyapp-server
+    app.kubernetes.io/part-of: tinyapp
+  name: tinyapp-server
+  namespace: tinyapp
+spec:
+  ports:
+    - name: grpcport
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+    - name: httpport
+      port: 8889
+      protocol: TCP
+      targetPort: 8889
+  selector:
+    app.kubernetes.io/name: tinyapp-server
+    app.kubernetes.io/part-of: tinyapp

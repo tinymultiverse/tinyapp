@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: jupyterlab-with-tinyapp
+  name: jupyterlab-with-tinyapp
+  namespace: tinyapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: jupyterlab-with-tinyapp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: jupyterlab-with-tinyapp
+      name: jupyterlab-with-tinyapp
+    spec:
+      containers:
+        - name: jupyterlab
+          image: quay.io/tinymultiverse/tinyapp-jupyter:latest
+          imagePullPolicy: Always
+          workingDir: <> # should be same as VOLUME_CLAIM_MOUNT_PATH env var
+          env:
+            - name: TINY_APP_SERVER_URL
+              value: http://tinyapp-server.tinyapp.svc.cluster.local:8889
+            - name: VOLUME_CLAIM_NAME
+              value: <>
+            - name: VOLUME_CLAIM_MOUNT_PATH
+              value: <> # should be same as workingDir
+          resources:
+            limits:
+              cpu: 250m
+              memory: 1Gi
+            requests:
+              cpu: 50m
+              memory: 64Mi

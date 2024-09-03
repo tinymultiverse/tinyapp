@@ -1,0 +1,11 @@
+FROM golang:1.22.4 as builder
+
+RUN mkdir /tinyapp-server
+COPY . /tinyapp-server
+WORKDIR /tinyapp-server
+RUN go mod vendor
+RUN make tinyapp-server-linux && chmod +x dist/tinyapp-server
+
+FROM golang:1.22.4
+COPY --from=builder /tinyapp-server/dist/tinyapp-server /bin/tinyapp-server
+ENTRYPOINT ["/bin/bash", "-c",  "tinyapp-server"]

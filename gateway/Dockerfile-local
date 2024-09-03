@@ -1,0 +1,11 @@
+FROM golang:1.22.4 as builder
+
+RUN mkdir /tinyapp-gateway
+COPY . /tinyapp-gateway
+WORKDIR /tinyapp-gateway
+
+RUN make tinyapp-gateway-linux && chmod +x dist/tinyapp-gateway && chmod +x dist/tinyapp-gateway
+
+FROM golang:1.22.4
+COPY --from=builder /tinyapp-gateway/dist/tinyapp-gateway /bin/tinyapp-gateway
+ENTRYPOINT ["/bin/bash", "-c",  "tinyapp-gateway"]
