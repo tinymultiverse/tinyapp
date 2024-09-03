@@ -1,0 +1,598 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "TinyAppServer"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/app": {
+      "delete": {
+        "summary": "Deletes an app",
+        "operationId": "TinyAppServer_DeleteTinyApp",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TinyAppServer"
+        ]
+      },
+      "post": {
+        "summary": "Creates a new app.",
+        "operationId": "TinyAppServer_CreateTinyApp",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/CreateTinyAppResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateTinyAppRequest"
+            }
+          }
+        ],
+        "tags": [
+          "TinyAppServer"
+        ]
+      },
+      "patch": {
+        "summary": "Updates an app",
+        "operationId": "TinyAppServer_UpdateTinyApp",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/UpdateTinyAppResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UpdateTinyAppRequest"
+            }
+          }
+        ],
+        "tags": [
+          "TinyAppServer"
+        ]
+      }
+    },
+    "/v1/app-access-metrics": {
+      "get": {
+        "summary": "Gets access metrics for a tiny app",
+        "operationId": "TinyAppServer_GetTinyAppAccessMetrics",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetTinyAppAccessMetricsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "timePeriod",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TinyAppServer"
+        ]
+      }
+    },
+    "/v1/app-logs": {
+      "get": {
+        "operationId": "TinyAppServer_GetTinyAppLogs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetTinyAppLogsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TinyAppServer"
+        ]
+      }
+    },
+    "/v1/app-usage-metrics": {
+      "get": {
+        "summary": "Gets CPU and memory metrics for a tiny app",
+        "operationId": "TinyAppServer_GetTinyAppUsageMetrics",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetTinyAppUsageMetricsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "timePeriod",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TinyAppServer"
+        ]
+      }
+    },
+    "/v1/apps": {
+      "get": {
+        "summary": "Gets list of apps",
+        "operationId": "TinyAppServer_ListTinyApps",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListTinyAppsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "appDetail.name",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "appDetail.description",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "appDetail.documentation",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "appDetail.image",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "appDetail.appType",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "APP_TYPE_UNKNOWN",
+              "APP_TYPE_STREAM_LIT",
+              "APP_TYPE_DASH"
+            ],
+            "default": "APP_TYPE_UNKNOWN"
+          },
+          {
+            "name": "appDetail.sourceType",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "SOURCE_TYPE_UNKNOWN",
+              "SOURCE_TYPE_GIT",
+              "SOURCE_TYPE_FILE_SYSTEM"
+            ],
+            "default": "SOURCE_TYPE_UNKNOWN"
+          },
+          {
+            "name": "appDetail.gitConfig.url",
+            "description": "Url to clone",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "appDetail.gitConfig.token",
+            "description": "Git token for authentication. Will be empty in response.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "appDetail.gitConfig.ref",
+            "description": "Branch or tag name depending on is_tag",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "appDetail.gitConfig.isTag",
+            "description": "If true, ref points to to tag instead of branch",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "appDetail.mainFilePath",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "appDetail.mainVolumeClaimName",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TinyAppServer"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "Any": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "AppType": {
+      "type": "string",
+      "enum": [
+        "APP_TYPE_UNKNOWN",
+        "APP_TYPE_STREAM_LIT",
+        "APP_TYPE_DASH"
+      ],
+      "default": "APP_TYPE_UNKNOWN"
+    },
+    "CreateTinyAppRequest": {
+      "type": "object",
+      "properties": {
+        "appDetail": {
+          "$ref": "#/definitions/TinyAppDetail"
+        }
+      }
+    },
+    "CreateTinyAppResponse": {
+      "type": "object",
+      "properties": {
+        "appRelease": {
+          "$ref": "#/definitions/TinyAppRelease"
+        }
+      }
+    },
+    "EnvVar": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "GetTinyAppAccessMetricsResponse": {
+      "type": "object",
+      "properties": {
+        "numberOfAccess": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "GetTinyAppLogsResponse": {
+      "type": "object",
+      "properties": {
+        "logs": {
+          "type": "string"
+        }
+      }
+    },
+    "GetTinyAppUsageMetricsResponse": {
+      "type": "object",
+      "properties": {
+        "cpuUsage": {
+          "type": "number",
+          "format": "double"
+        },
+        "cpuLimit": {
+          "type": "number",
+          "format": "double"
+        },
+        "memoryUsage": {
+          "type": "number",
+          "format": "double"
+        },
+        "memoryLimit": {
+          "type": "number",
+          "format": "double"
+        },
+        "percentCpuUsed": {
+          "type": "number",
+          "format": "double"
+        },
+        "percentMemoryUsed": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "GitConfig": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "title": "Url to clone"
+        },
+        "token": {
+          "type": "string",
+          "description": "Git token for authentication. Will be empty in response."
+        },
+        "ref": {
+          "type": "string",
+          "title": "Branch or tag name depending on is_tag"
+        },
+        "isTag": {
+          "type": "boolean",
+          "title": "If true, ref points to to tag instead of branch"
+        }
+      }
+    },
+    "ListTinyAppsResponse": {
+      "type": "object",
+      "properties": {
+        "apps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/TinyApp"
+          }
+        }
+      }
+    },
+    "SourceType": {
+      "type": "string",
+      "enum": [
+        "SOURCE_TYPE_UNKNOWN",
+        "SOURCE_TYPE_GIT",
+        "SOURCE_TYPE_FILE_SYSTEM"
+      ],
+      "default": "SOURCE_TYPE_UNKNOWN"
+    },
+    "Status": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/Any"
+          }
+        }
+      }
+    },
+    "TinyApp": {
+      "type": "object",
+      "properties": {
+        "appRelease": {
+          "$ref": "#/definitions/TinyAppRelease"
+        },
+        "appDetail": {
+          "$ref": "#/definitions/TinyAppDetail"
+        }
+      }
+    },
+    "TinyAppDetail": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "documentation": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "appType": {
+          "$ref": "#/definitions/AppType"
+        },
+        "sourceType": {
+          "$ref": "#/definitions/SourceType"
+        },
+        "gitConfig": {
+          "$ref": "#/definitions/GitConfig"
+        },
+        "mainFilePath": {
+          "type": "string"
+        },
+        "env": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/EnvVar"
+          }
+        },
+        "volumeClaims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/VolumeClaim"
+          }
+        },
+        "mainVolumeClaimName": {
+          "type": "string"
+        }
+      }
+    },
+    "TinyAppRelease": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "appUrl": {
+          "type": "string"
+        },
+        "creationTimeStamp": {
+          "type": "string"
+        },
+        "appImage": {
+          "type": "string"
+        }
+      }
+    },
+    "UpdateTinyAppRequest": {
+      "type": "object",
+      "properties": {
+        "appId": {
+          "type": "string"
+        },
+        "appDetail": {
+          "$ref": "#/definitions/TinyAppDetail"
+        }
+      }
+    },
+    "UpdateTinyAppResponse": {
+      "type": "object",
+      "properties": {
+        "appRelease": {
+          "$ref": "#/definitions/TinyAppRelease"
+        }
+      }
+    },
+    "VolumeClaim": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "subPath": {
+          "type": "string"
+        },
+        "mountPath": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

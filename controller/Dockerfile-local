@@ -1,0 +1,11 @@
+FROM golang:1.22.4 as builder
+
+RUN mkdir /tinyapp-controller
+ADD . /tinyapp-controller/
+WORKDIR /tinyapp-controller
+
+RUN make tinyapp-controller-linux && chmod +x dist/tinyapp-controller
+
+FROM golang:1.22.4
+COPY --from=builder /tinyapp-controller/dist/tinyapp-controller /bin/tinyapp-controller
+ENTRYPOINT ["/bin/bash", "-c",  "tinyapp-controller"]

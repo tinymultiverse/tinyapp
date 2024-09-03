@@ -1,0 +1,20 @@
+.vscode/
+.idea/
+.DS_Store
+.env
+vendor/
+dist/
+venv/
+# delve debug binaries
+cmd/**/debug
+hack/**/debug
+debug.test
+*.iml
+.coverage
+*.out
+site/
+/go-diagrams/
+argo-events
+# ignore temp vi files
+*.swo
+*.swp
