@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package cmd
 
 import (
 	"context"
@@ -36,7 +36,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc" // Fix 'no Auth Provider found for name \"oidc\"'
 )
 
-func main() {
+func Start() {
 	logging.InitLoggerFromEnvironment()
 
 	// Initialize environment variables

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package cmd
 
 import (
 	"github.com/tinymultiverse/tinyapp/controller/internal"
@@ -42,7 +42,9 @@ import (
 
 var envVars internal.EnvVars
 
-func init() {
+func Start() {
+	zap.S().Info("Initializing TinyApp controller")
+
 	logging.InitLoggerFromEnvironment()
 
 	envVars = internal.EnvVars{}
@@ -57,10 +59,6 @@ func init() {
 	if envVars.PodAnnotations == nil {
 		envVars.PodAnnotations = map[string]string{}
 	}
-}
-
-func main() {
-	zap.S().Info("Initializing TinyApp controller")
 
 	opts := ctrl.Options{
 		Namespace:              envVars.TinyAppNamespace,

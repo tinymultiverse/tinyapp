@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package cmd
 
 import (
 	"net/http"
@@ -34,7 +34,7 @@ import (
 
 var envVars internal.EnvVars
 
-func main() {
+func Start() {
 	logging.InitLoggerFromEnvironment()
 
 	envVars = internal.EnvVars{}
