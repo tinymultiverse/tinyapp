@@ -278,7 +278,10 @@ func buildGatewayContainer(app *v1alpha1.TinyApp, env internal.EnvVars) corev1.C
 			},
 		},
 		ImagePullPolicy: corev1.PullAlways,
-		Env:             envs,
+		Args: []string{
+			"gateway",
+		},
+		Env: envs,
 		Resources: corev1.ResourceRequirements{
 			Requests: corev1.ResourceList{
 				corev1.ResourceCPU:    resource.MustParse(util.GatewayContainerCPURequest),
