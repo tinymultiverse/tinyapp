@@ -147,7 +147,7 @@ func ConvertToK8sTinyApp(in *pb.TinyAppDetail, objName string, envVars internal.
 			Image:               image,
 			AppType:             ConvertToK8sAppType(in.AppType),
 			SourceType:          ConvertToK8sSourceType(in.SourceType),
-			GitConfig:           ConvertToK8sGitConfig(in.GitConfig, objName, envVars),
+			GitConfig:           ConvertToK8sGitConfig(in.GitConfig, objName),
 			MainFilePath:        in.MainFilePath,
 			EnvVars:             ConvertToK8sEnvVars(in.Env),
 			VolumeClaims:        ConvertToK8sVolumeClaims(in.VolumeClaims),
@@ -193,14 +193,14 @@ func ConvertToK8sSourceType(sourceType pb.SourceType) v1alpha1.SourceType {
 	}
 }
 
-func ConvertToK8sGitConfig(gitConfig *pb.GitConfig, appObjName string, envVars internal.EnvVars) *v1alpha1.GitConfig {
+func ConvertToK8sGitConfig(gitConfig *pb.GitConfig, appObjName string) *v1alpha1.GitConfig {
 	if gitConfig == nil {
 		return nil
 	}
 
-	tokenSecretName := envVars.DefaultGitTokenSecret
+	var tokenSecretName string
 	if gitConfig.Token != "" {
-		// If token is provided, we create a secret with name that is the same as tiny app object name.
+		// If token is provided, secret named appObjName should've been created
 		tokenSecretName = appObjName
 	}
 

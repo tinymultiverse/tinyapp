@@ -18,7 +18,7 @@ package internal
 
 // EnvVars used throughout code
 type EnvVars struct {
-	TinyAppNamespace  string            `env:"TINY_APP_NAMESPACE,notEmpty""`
+	TinyAppNamespace  string            `env:"TINY_APP_NAMESPACE" envDefault:"tinyapp"`
 	AppServiceAccount string            `env:"APP_SERVICE_ACCOUNT" envDefault:"default"`
 	GitSyncImage      string            `env:"GIT_SYNC_IMAGE" envDefault:"registry.k8s.io/git-sync/git-sync:v3.6.8"`
 	GitSyncEnvVars    map[string]string `env:"GIT_SYNC_ENV_VARS" envKeyValSeparator:"="`

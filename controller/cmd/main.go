@@ -20,7 +20,7 @@ import (
 	"github.com/tinymultiverse/tinyapp/controller/internal"
 	"github.com/tinymultiverse/tinyapp/controller/reconciler"
 	"github.com/tinymultiverse/tinyapp/controller/util"
-	v1alpha12 "github.com/tinymultiverse/tinyapp/pkg/k8s/api/tinyapp/v1alpha1"
+	"github.com/tinymultiverse/tinyapp/pkg/k8s/api/tinyapp/v1alpha1"
 	"github.com/tinymultiverse/tinyapp/util/logging"
 
 	"github.com/caarlos0/env/v10"
@@ -75,7 +75,7 @@ func main() {
 	}
 
 	// Register controllers
-	if err = v1alpha12.AddToScheme(mgr.GetScheme()); err != nil {
+	if err = v1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		zap.S().Fatalw("failed to register TinyApp controller scheme", "error", err)
 	}
 
@@ -106,7 +106,7 @@ func main() {
 
 	// Watch for TinyApp
 	if err = c.Watch(
-		&source.Kind{Type: &v1alpha12.TinyApp{}}, &handler.EnqueueRequestForObject{}); err != nil {
+		&source.Kind{Type: &v1alpha1.TinyApp{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		zap.S().Fatalw("failed to register TinyApp watcher", "error", err)
 	}
 
@@ -119,7 +119,7 @@ func main() {
 		&source.Kind{Type: &appsv1.Deployment{}},
 		&handler.EnqueueRequestForOwner{
 			IsController: true,
-			OwnerType:    &v1alpha12.TinyApp{}},
+			OwnerType:    &v1alpha1.TinyApp{}},
 		dependentPredicate); err != nil {
 		zap.S().Fatalw("failed to register Deployment watcher", "error", err)
 	}
@@ -129,7 +129,7 @@ func main() {
 		&source.Kind{Type: &corev1.Service{}},
 		&handler.EnqueueRequestForOwner{
 			IsController: true,
-			OwnerType:    &v1alpha12.TinyApp{}},
+			OwnerType:    &v1alpha1.TinyApp{}},
 		dependentPredicate); err != nil {
 		zap.S().Fatalw("failed to register Service watcher", "error", err)
 	}
@@ -139,7 +139,7 @@ func main() {
 		&source.Kind{Type: &networkingv1.Ingress{}},
 		&handler.EnqueueRequestForOwner{
 			IsController: true,
-			OwnerType:    &v1alpha12.TinyApp{}},
+			OwnerType:    &v1alpha1.TinyApp{}},
 		dependentPredicate); err != nil {
 		zap.S().Fatalw("failed to register Service watcher", "error", err)
 	}

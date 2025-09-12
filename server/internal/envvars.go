@@ -18,17 +18,16 @@ package internal
 
 // EnvVars are used throughout code
 type EnvVars struct {
-	GRPCPort              int    `env:"GRPC_PORT" envDefault:"8082"`
-	HTTPPort              int    `env:"HTTP_PORT" envDefault:"8889"`
-	KubeConfigPath        string `env:"KUBE_CONFIG_PATH"`
-	TinyAppNamespace      string `env:"TINY_APP_NAMESPACE,notEmpty"`
-	DefaultAppImage       string `env:"DEFAULT_APP_IMAGE"`
-	AppIngressDomain      string `env:"APP_INGRESS_DOMAIN,notEmpty"`
-	AppIngressSubPath     string `env:"APP_INGRESS_SUB_PATH"`
-	AppIngressTlsEnabled  bool   `env:"APP_INGRESS_TLS_ENABLED" envDefault:"true"`
-	PrometheusUserName    string `env:"PROMETHEUS_USER_NAME"` // Ignored if PrometheusSecretPath is set
-	PrometheusPassword    string `env:"PROMETHEUS_PASSWORD"`  // Ignored if PrometheusSecretPath is set
-	PrometheusSecretPath  string `env:"PROMETHEUS_SECRET_PATH"`
-	PrometheusUrl         string `env:"PROMETHEUS_URL"`           // Required if utilizing metrics endpoints
-	DefaultGitTokenSecret string `env:"DEFAULT_GIT_TOKEN_SECRET"` // Default k8s secret name for git token
+	GRPCPort             int    `env:"GRPC_PORT" envDefault:"8082"`
+	HTTPPort             int    `env:"HTTP_PORT" envDefault:"8889"`
+	KubeConfigPath       string `env:"KUBE_CONFIG_PATH"`
+	TinyAppNamespace     string `env:"TINY_APP_NAMESPACE" envDefault:"tinyapp"`
+	DefaultAppImage      string `env:"DEFAULT_APP_IMAGE"`
+	AppIngressDomain     string `env:"APP_INGRESS_DOMAIN,notEmpty"`
+	AppIngressSubPath    string `env:"APP_INGRESS_SUB_PATH"`
+	AppIngressTlsEnabled bool   `env:"APP_INGRESS_TLS_ENABLED"`
+	PrometheusUrl        string `env:"PROMETHEUS_URL"`
+	PrometheusSecretPath string `env:"PROMETHEUS_SECRET_PATH"` // Path to Prometheus secret
+	PrometheusUserName   string `env:"PROMETHEUS_USER_NAME"`   // Ignored if PrometheusSecretPath is set
+	PrometheusPassword   string `env:"PROMETHEUS_PASSWORD"`    // Ignored if PrometheusSecretPath is set
 }

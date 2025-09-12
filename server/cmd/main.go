@@ -26,6 +26,7 @@ import (
 	"github.com/tinymultiverse/tinyapp/server/internal"
 	"github.com/tinymultiverse/tinyapp/server/v1"
 	"github.com/tinymultiverse/tinyapp/util/logging"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
 	"github.com/caarlos0/env/v10"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -44,15 +45,18 @@ func main() {
 		zap.S().Fatalf("could not process environment variables: %v", err)
 	}
 
-	zap.S().Info("tinyapp-server starting")
+	zap.S().Info("getting k8s config")
+	k8sConfig := config.GetConfigOrDie()
+
+	server, err := v1.NewServer(envVars, k8sConfig)
+	if err != nil {
+		zap.S().Fatalf("failed to create server: %v", err)
+	}
+
+	zap.S().Info("starting tcp listener")
 	lis, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", envVars.GRPCPort))
 	if err != nil {
 		zap.S().Fatalf("failed to listen: %v", err)
-	}
-
-	server, err := v1.NewServer(envVars)
-	if err != nil {
-		zap.S().Fatalf("failed to create server: %v", err)
 	}
 
 	s := grpc.NewServer()
