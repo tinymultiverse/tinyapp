@@ -20,7 +20,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"strings"
+	"path"
 
 	"github.com/tinymultiverse/tinyapp/controller/util"
 	"github.com/tinymultiverse/tinyapp/gateway/internal"
@@ -30,8 +30,8 @@ import (
 )
 
 type proxyServerConfig struct {
-	Proxy   *httputil.ReverseProxy
-	AppName string
+	Proxy      *httputil.ReverseProxy
+	URLSubPath string
 }
 
 func NewProxyServerConfig(envVars internal.EnvVars) (*proxyServerConfig, error) {
@@ -43,17 +43,17 @@ func NewProxyServerConfig(envVars internal.EnvVars) (*proxyServerConfig, error) 
 	proxy := httputil.NewSingleHostReverseProxy(targetURL)
 
 	return &proxyServerConfig{
-		Proxy:   proxy,
-		AppName: envVars.TinyAppName,
+		Proxy:      proxy,
+		URLSubPath: envVars.URLSubPath,
 	}, nil
 }
 
 func (p *proxyServerConfig) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	zap.S().Infow("got a request", "host", req.Host, "method", req.Method, "requestURL", req.URL.String())
+	zap.S().Debugw("got a request", "host", req.Host, "method", req.Method, "requestURL", req.URL.String())
 
-	// Only increment user count if the request URL is app homepage, i.e. request url ends with app name (id).
-	if strings.HasSuffix(req.URL.Path, p.AppName+"/") {
-		zap.S().Debug("Incrementing user count")
+	// Only increment user count if the request URL is app homepage
+	if path.Clean(req.URL.Path) == path.Clean(p.URLSubPath) {
+		zap.S().Info("Incrementing user count")
 		// TODO Once integrated with OAuth, get actual username from auth server
 		metrics.UsernameCounter.WithLabelValues(globalutil.AnyUserName).Inc()
 	}

@@ -22,5 +22,5 @@ type EnvVars struct {
 	MetricsTlsEnabled bool   `env:"METRICS_TLS_ENABLED" envDefault:"false"`
 	MetricsPort       string `env:"METRICS_PORT"` // Required if METRICS_ENABLED is true
 	MetricsPath       string `env:"METRICS_PATH"` // Required if METRICS_ENABLED is true
-	TinyAppName       string `env:"TINY_APP_NAME,notEmpty"`
+	URLSubPath        string `env:"URL_SUB_PATH" envDefault:"/"`
 }
