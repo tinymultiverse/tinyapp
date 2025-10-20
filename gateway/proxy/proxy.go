@@ -21,8 +21,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"path"
+	"strings"
 
-	"github.com/tinymultiverse/tinyapp/controller/util"
 	"github.com/tinymultiverse/tinyapp/gateway/internal"
 	"github.com/tinymultiverse/tinyapp/gateway/util/metrics"
 	globalutil "github.com/tinymultiverse/tinyapp/util"
@@ -30,26 +30,45 @@ import (
 )
 
 type proxyServerConfig struct {
-	Proxy      *httputil.ReverseProxy
-	URLSubPath string
+	Proxy                  *httputil.ReverseProxy
+	SecondaryProxy         *httputil.ReverseProxy
+	SecondaryTargetPattern string
+	URLSubPath             string
 }
 
 func NewProxyServerConfig(envVars internal.EnvVars) (*proxyServerConfig, error) {
-	targetURL, err := url.Parse("http://localhost:" + util.DefaultAppPort)
+	targetURL, err := url.Parse("http://127.0.0.1:" + envVars.PrimaryTargetPort)
 	if err != nil {
 		return nil, err
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(targetURL)
 
+	var secondaryProxy *httputil.ReverseProxy
+	if envVars.SecondaryTargetPattern != "" && envVars.SecondaryTargetPort != "" {
+		secondaryTargetUrl := &url.URL{
+			Scheme: "http",
+			Host:   "127.0.0.1:" + envVars.SecondaryTargetPort,
+		}
+		secondaryProxy = httputil.NewSingleHostReverseProxy(secondaryTargetUrl)
+	}
+
 	return &proxyServerConfig{
-		Proxy:      proxy,
-		URLSubPath: envVars.URLSubPath,
+		Proxy:                  proxy,
+		SecondaryProxy:         secondaryProxy,
+		SecondaryTargetPattern: envVars.SecondaryTargetPattern,
+		URLSubPath:             envVars.URLSubPath,
 	}, nil
 }
 
 func (p *proxyServerConfig) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	zap.S().Debugw("got a request", "host", req.Host, "method", req.Method, "requestURL", req.URL.String())
+
+	if p.SecondaryProxy != nil && strings.Contains(req.URL.Path, p.SecondaryTargetPattern) {
+		zap.S().Debugw("routing to secondary proxy", "path", req.URL.Path)
+		p.SecondaryProxy.ServeHTTP(res, req)
+		return
+	}
 
 	// Only increment user count if the request URL is app homepage
 	if path.Clean(req.URL.Path) == path.Clean(p.URLSubPath) {
