@@ -84,7 +84,7 @@ message GitConfig {
 
 enum AppType {
     APP_TYPE_UNKNOWN = 0;
-    APP_TYPE_STREAM_LIT = 1;
+    APP_TYPE_STREAMLIT = 1;
     APP_TYPE_DASH = 2;
 }
 

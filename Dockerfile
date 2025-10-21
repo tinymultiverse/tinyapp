@@ -11,4 +11,4 @@ RUN make tinyapp-linux && chmod +x dist/tinyapp
 
 FROM golang:1.22.4
 COPY --from=builder /tinyapp/dist/tinyapp /bin/tinyapp
-ENTRYPOINT ["/bin/bash", "-c", "tinyapp"]
+ENTRYPOINT ["/bin/tinyapp"]

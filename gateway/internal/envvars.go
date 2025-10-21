@@ -17,7 +17,7 @@ limitations under the License.
 package internal
 
 type EnvVars struct {
-	HttpPort               string `env:"HTTP_PORT" envDefault:"8889"`
+	HttpPort               string `env:"HTTP_PORT" envDefault:"8005"`
 	PrimaryTargetPort      string `env:"PRIMARY_TARGET_PORT" envDefault:"5000"`
 	SecondaryTargetPattern string `env:"SECONDARY_TARGET_PATTERN" envDefault:""`
 	SecondaryTargetPort    string `env:"SECONDARY_TARGET_PORT" envDefault:""`

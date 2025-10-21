@@ -49,7 +49,7 @@ func Start() {
 
 	mux := http.NewServeMux()
 	mux.Handle("/", proxyConfig)
-	addr := ":" + envVars.HttpPort
+	addr := "127.0.0.1:" + envVars.HttpPort
 
 	if envVars.MetricsEnabled {
 		if envVars.MetricsPath == "" || envVars.MetricsPort == "" {
@@ -85,7 +85,7 @@ func Start() {
 }
 
 func startProxyServer(addr string, mux *http.ServeMux) {
-	zap.S().Info("starting proxy gateway")
+	zap.S().Infow("starting proxy gateway", "addr", addr)
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		zap.S().Fatalw("could not start proxy server", "error", err)
 	}
