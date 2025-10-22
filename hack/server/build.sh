@@ -2,6 +2,6 @@
 
 cd ./pkg/server/api/v1/proto
 
-buf mod update
+buf dep update
 buf build
 buf generate
