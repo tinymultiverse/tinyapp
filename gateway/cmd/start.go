@@ -49,7 +49,7 @@ func Start() {
 
 	mux := http.NewServeMux()
 	mux.Handle("/", proxyConfig)
-	addr := "127.0.0.1:" + envVars.HttpPort
+	addr := ":" + envVars.HttpPort
 
 	if envVars.MetricsEnabled {
 		if envVars.MetricsPath == "" || envVars.MetricsPort == "" {

@@ -75,7 +75,7 @@ func ConvertToProtoEnvVars(envVars []*corev1.EnvVar) []*pb.EnvVar {
 func ConvertToProtoAppType(appType v1alpha1.AppType) pb.AppType {
 	switch appType {
 	case v1alpha1.AppTypeStreamlit:
-		return pb.AppType_APP_TYPE_STREAM_LIT
+		return pb.AppType_APP_TYPE_STREAMLIT
 	case v1alpha1.AppTypeDash:
 		return pb.AppType_APP_TYPE_DASH
 	default:
@@ -173,7 +173,7 @@ func ConvertToK8sEnvVars(envVars []*pb.EnvVar) []*corev1.EnvVar {
 
 func ConvertToK8sAppType(appType pb.AppType) v1alpha1.AppType {
 	switch appType {
-	case pb.AppType_APP_TYPE_STREAM_LIT:
+	case pb.AppType_APP_TYPE_STREAMLIT:
 		return v1alpha1.AppTypeStreamlit
 	case pb.AppType_APP_TYPE_DASH:
 		return v1alpha1.AppTypeDash

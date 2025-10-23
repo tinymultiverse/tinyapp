@@ -1,4 +1,4 @@
-FROM golang:1.22.4 AS builder
+FROM golang:1.25 AS builder
 
 RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificates
 
@@ -9,6 +9,6 @@ WORKDIR /tinyapp
 RUN go mod vendor
 RUN make tinyapp-linux && chmod +x dist/tinyapp
 
-FROM golang:1.22.4
+FROM golang:1.25
 COPY --from=builder /tinyapp/dist/tinyapp /bin/tinyapp
 ENTRYPOINT ["/bin/tinyapp"]
