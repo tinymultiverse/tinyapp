@@ -1,0 +1,70 @@
+# Default values for tinyapp.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+namespace: tinyapp
+
+# Controller configuration
+controller:
+  name: tinyapp-controller
+  replicaCount: 1
+  image: ghcr.io/tinymultiverse/tinyapp:latest
+  imagePullPolicy: Always
+  tinyAppNamespace: tinyapp
+  appServiceAccount: default
+  gatewayImage: ghcr.io/tinymultiverse/tinyapp:latest
+  metricsEnabled: "false"
+  gatewayMetricsPort: "9090"
+  gatewayMetricsPath: /metrics
+  gatewayMetricsTlsEnabled: "false"
+  gitSyncImage: registry.k8s.io/git-sync/git-sync:v3.6.8
+  tlsSecretName: ""
+  resources:
+    limits:
+      cpu: 100m
+      memory: 1Gi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Server configuration
+server:
+  name: tinyapp-server
+  replicaCount: 1
+  image: ghcr.io/tinymultiverse/tinyapp:latest
+  imagePullPolicy: Always
+  tinyAppNamespace: tinyapp
+  appIngressDomain: host.docker.internal
+  appIngressTlsEnabled: "false"
+  ports:
+    grpc: 8082
+    http: 8889
+    containerPort: 8889
+  livenessProbe:
+    failureThreshold: 10
+    initialDelaySeconds: 10
+    periodSeconds: 20
+    successThreshold: 1
+    timeoutSeconds: 1
+  readinessProbe:
+    failureThreshold: 10
+    initialDelaySeconds: 5
+    periodSeconds: 7
+    successThreshold: 1
+    timeoutSeconds: 1
+  resources:
+    limits:
+      cpu: 100m
+      memory: 1Gi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# ServiceAccount names
+serviceAccounts:
+  controller: tinyapp-controller
+  server: tinyapp-server
+
+# RBAC configuration
+rbac:
+  create: true

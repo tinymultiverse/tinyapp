@@ -1,0 +1,59 @@
+# Default values for jupyterlab-with-tinyapp.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+namespace: tinyapp
+
+replicaCount: 1
+
+# Jupyter container configuration
+jupyter:
+  image: ghcr.io/tinymultiverse/jupyterlab-tinyapp:latest
+  imagePullPolicy: Always
+  baseUrl: /jupyter
+  tinyAppServerUrl: http://tinyapp-server.tinyapp.svc.cluster.local:8889
+  appPreviewUrl: http://host.docker.internal
+  tinyAppImage: ghcr.io/tinymultiverse/jupyterlab-tinyapp:latest
+  aiEnabled: "false"
+  volumeClaimName: my-data
+  volumeClaimMountPath: /home/jovyan
+  resources:
+    limits:
+      cpu: 250m
+      memory: 1Gi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Gateway container configuration
+gateway:
+  image: ghcr.io/tinymultiverse/tinyapp:latest
+  imagePullPolicy: Always
+  primaryTargetPort: "8888"
+  secondaryTargetPattern: /tinyapp/app-preview
+  secondaryTargetPort: "8002"
+  metricsEnabled: "false"
+  logType: development
+  resources:
+    limits:
+      cpu: 150m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Volume configuration
+volume:
+  claimName: my-data
+
+# Service configuration
+service:
+  port: 80
+  targetPort: 8005
+
+# Ingress configuration
+ingress:
+  enabled: true
+  host: host.docker.internal
+  path: /jupyter
+  pathType: Prefix

@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: { { .Values.server.name } }
+    app.kubernetes.io/part-of: tinyapp
+  name: { { .Values.server.name } }
+  namespace: { { .Values.namespace } }
+spec:
+  replicas: { { .Values.server.replicaCount } }
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: { { .Values.server.name } }
+      app.kubernetes.io/part-of: tinyapp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: { { .Values.server.name } }
+        app.kubernetes.io/part-of: tinyapp
+    spec:
+      containers:
+        - name: { { .Values.server.name } }
+          image: { { .Values.server.image } }
+          imagePullPolicy: { { .Values.server.imagePullPolicy } }
+          args: ["server"]
+          env:
+            - name: TINY_APP_NAMESPACE
+              value: { { .Values.server.tinyAppNamespace } }
+            - name: APP_INGRESS_DOMAIN
+              value: { { .Values.server.appIngressDomain } }
+            - name: APP_INGRESS_TLS_ENABLED
+              value: { { .Values.server.appIngressTlsEnabled | quote } }
+          ports:
+            - containerPort: { { .Values.server.ports.containerPort } }
+              name: httpport
+              protocol: TCP
+          livenessProbe:
+            failureThreshold:
+              { { .Values.server.livenessProbe.failureThreshold } }
+            initialDelaySeconds:
+              { { .Values.server.livenessProbe.initialDelaySeconds } }
+            periodSeconds: { { .Values.server.livenessProbe.periodSeconds } }
+            successThreshold:
+              { { .Values.server.livenessProbe.successThreshold } }
+            tcpSocket:
+              port: httpport
+            timeoutSeconds: { { .Values.server.livenessProbe.timeoutSeconds } }
+          readinessProbe:
+            failureThreshold:
+              { { .Values.server.readinessProbe.failureThreshold } }
+            initialDelaySeconds:
+              { { .Values.server.readinessProbe.initialDelaySeconds } }
+            periodSeconds: { { .Values.server.readinessProbe.periodSeconds } }
+            successThreshold:
+              { { .Values.server.readinessProbe.successThreshold } }
+            tcpSocket:
+              port: httpport
+            timeoutSeconds: { { .Values.server.readinessProbe.timeoutSeconds } }
+          resources:
+            limits:
+              cpu: { { .Values.server.resources.limits.cpu } }
+              memory: { { .Values.server.resources.limits.memory } }
+            requests:
+              cpu: { { .Values.server.resources.requests.cpu } }
+              memory: { { .Values.server.resources.requests.memory } }
+      serviceAccountName: { { .Values.serviceAccounts.server } }
