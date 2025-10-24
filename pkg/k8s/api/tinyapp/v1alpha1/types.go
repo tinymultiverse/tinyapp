@@ -68,7 +68,7 @@ type TinyAppSpec struct {
 	// IngressDomain is domain of the ingress.
 	IngressDomain string `json:"ingressDomain"`
 	// IngressSubPath is the path to the app in the ingress.
-	IngressSubPath string `json:"ingressPath"`
+	IngressSubPath string `json:"ingressSubPath"`
 	// IngressTlsEnabled specified whether Tls is enabled for ingress.
 	IngressTlsEnabled bool `json:"ingressTlsEnabled"`
 }

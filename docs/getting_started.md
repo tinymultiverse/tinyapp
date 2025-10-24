@@ -6,9 +6,9 @@ Getting started with Tiny App is easy.
 - Installed [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) command-line tool.
 - Have a [kubeconfig](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/)
 file (default location is `~/.kube/config`).
-- Ingress Controller running in your cluster.
+- Default ingress controller running in your cluster (ingressclass with annotation ingressclass.kubernetes.io/is-default-class=true).
 
-#### Install HAProxy Ingress Controller
+#### Install HAProxy Ingress Controller (Optional)
 
 If you don't already have an ingress controller running in the cluster, you can install HAProxy by running:
 
@@ -24,6 +24,8 @@ helm install haproxy-ingress haproxytech/kubernetes-ingress \
   --set controller.service.type=LoadBalancer \
   --set controller.ingressClass=haproxy \
   --set controller.config.reload-strategy=reusesocket
+
+kubectl annotate ingressclass haproxy ingressclass.kubernetes.io/is-default-class=true
 ```
 
 ## Install Tiny App Components
@@ -57,7 +59,7 @@ tinyapp-controller.
 Start a JupyterLab container by running:
 
 ```bash
-kubectl apply -f pvc.yaml
+kubectl apply -f manifests/pvc.yaml
 kubectl apply -f manifests/jupyterlab.yaml
 ```
 
