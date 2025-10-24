@@ -23,6 +23,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/tinymultiverse/tinyapp/gateway/auth"
 	"github.com/tinymultiverse/tinyapp/gateway/internal"
 	"github.com/tinymultiverse/tinyapp/gateway/util/metrics"
 	globalutil "github.com/tinymultiverse/tinyapp/util"
@@ -34,6 +35,7 @@ type proxyServerConfig struct {
 	SecondaryProxy         *httputil.ReverseProxy
 	SecondaryTargetPattern string
 	URLSubPath             string
+	authenticator          *auth.LDAPAuthenticator
 }
 
 func NewProxyServerConfig(envVars internal.EnvVars) (*proxyServerConfig, error) {
@@ -53,28 +55,46 @@ func NewProxyServerConfig(envVars internal.EnvVars) (*proxyServerConfig, error) 
 		secondaryProxy = httputil.NewSingleHostReverseProxy(secondaryTargetUrl)
 	}
 
+	// Initialize LDAP authenticator
+	authenticator := auth.NewLDAPAuthenticator(envVars)
+
 	return &proxyServerConfig{
 		Proxy:                  proxy,
 		SecondaryProxy:         secondaryProxy,
 		SecondaryTargetPattern: envVars.SecondaryTargetPattern,
 		URLSubPath:             envVars.URLSubPath,
+		authenticator:          authenticator,
 	}, nil
 }
 
 func (p *proxyServerConfig) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	zap.S().Debugw("got a request", "host", req.Host, "method", req.Method, "requestURL", req.URL.String())
 
+	// Authenticate request if LDAP is enabled
+	username, err := p.authenticator.AuthenticateRequest(req)
+	if err != nil {
+		zap.S().Warnw("authentication failed", "error", err, "remoteAddr", req.RemoteAddr)
+		p.authenticator.RequireAuth(res)
+		return
+	}
+
+	// Set the authenticated username for metrics and logging
+	authenticatedUser := globalutil.AnyUserName
+	if username != "" {
+		authenticatedUser = username
+		zap.S().Debugw("authenticated user", "username", username)
+	}
+
 	if p.SecondaryProxy != nil && strings.Contains(req.URL.Path, p.SecondaryTargetPattern) {
-		zap.S().Debugw("routing to secondary proxy", "path", req.URL.Path)
+		zap.S().Debugw("routing to secondary proxy", "path", req.URL.Path, "user", authenticatedUser)
 		p.SecondaryProxy.ServeHTTP(res, req)
 		return
 	}
 
 	// Only increment user count if the request URL is app homepage
 	if path.Clean(req.URL.Path) == path.Clean(p.URLSubPath) {
-		zap.S().Info("Incrementing user count")
-		// TODO Once integrated with OAuth, get actual username from auth server
-		metrics.UsernameCounter.WithLabelValues(globalutil.AnyUserName).Inc()
+		zap.S().Infow("Incrementing user count", "user", authenticatedUser)
+		metrics.UsernameCounter.WithLabelValues(authenticatedUser).Inc()
 	}
 
 	p.Proxy.ServeHTTP(res, req)

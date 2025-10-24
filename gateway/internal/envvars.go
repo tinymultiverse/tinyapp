@@ -26,4 +26,14 @@ type EnvVars struct {
 	MetricsPort            string `env:"METRICS_PORT"` // Required if METRICS_ENABLED is true
 	MetricsPath            string `env:"METRICS_PATH"` // Required if METRICS_ENABLED is true
 	URLSubPath             string `env:"URL_SUB_PATH" envDefault:"/"`
+	// LDAP Configuration
+	LdapEnabled       bool   `env:"LDAP_ENABLED" envDefault:"true"`
+	LdapServer        string `env:"LDAP_SERVER" envDefault:"localhost"`                    // Required if LDAP_ENABLED is true
+	LdapPort          int    `env:"LDAP_PORT" envDefault:"1389"`                           // 389 for LDAP, 636 for LDAPS
+	LdapTLS           bool   `env:"LDAP_TLS" envDefault:"false"`                           // Use TLS connection
+	LdapBaseDN        string `env:"LDAP_BASE_DN" envDefault:"ou=people,dc=example,dc=org"` // Required if LDAP_ENABLED is true
+	LdapBindDN        string `env:"LDAP_BIND_DN" envDefault:"cn=admin,dc=example,dc=org"`  // Service account DN for searching
+	LdapBindPassword  string `env:"LDAP_BIND_PASSWORD" envDefault:"adminpassword"`         // Service account password
+	LdapUserAttribute string `env:"LDAP_USER_ATTRIBUTE" envDefault:"uid"`                  // Attribute to search for username
+	LdapUserFilter    string `env:"LDAP_USER_FILTER"`                                      // Additional filter for user search
 }
