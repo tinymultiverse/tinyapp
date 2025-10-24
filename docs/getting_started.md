@@ -6,10 +6,31 @@ Getting started with Tiny App is easy.
 - Installed [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) command-line tool.
 - Have a [kubeconfig](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/)
 file (default location is `~/.kube/config`).
+- Default ingress controller running in your cluster (ingressclass with annotation ingressclass.kubernetes.io/is-default-class=true).
+
+#### Install HAProxy Ingress Controller (Optional)
+
+If you don't already have an ingress controller running in the cluster, you can install HAProxy by running:
+
+```bash
+helm repo add haproxytech https://haproxytech.github.io/helm-charts
+
+helm repo update
+
+kubectl create namespace haproxy-controller
+
+helm install haproxy-ingress haproxytech/kubernetes-ingress \
+  --namespace haproxy-controller \
+  --set controller.service.type=LoadBalancer \
+  --set controller.ingressClass=haproxy \
+  --set controller.config.reload-strategy=reusesocket
+
+kubectl annotate ingressclass haproxy ingressclass.kubernetes.io/is-default-class=true
+```
 
 ## Install Tiny App Components
 
-Clone this repository and fill in value for APP_INGRESS_DOMAIN environment variable in manifests/install.yaml.
+Clone this repository and fill in value for APP_INGRESS_DOMAIN environment variable in manifests/install.yaml. If you're running Docker Desktop Kubernetes, you can set it to "host.docker.internal".
 
 ```bash
 kubectl create namespace tinyapp
@@ -31,6 +52,17 @@ deployment.
 - To configure TLS for app ingress, set APP_INGRESS_TLS_ENABLED env var for tinyapp-server and TLS_SECRET_NAME for
 tinyapp-controller.
 
-## Deploy Tiny App Instance
+## Deploy TinyApp
 
-#### 1. Deploy Tiny App from JupyterLab extension
+#### Using JupyterLab Extension
+
+Start a JupyterLab container by running:
+
+```bash
+kubectl apply -f manifests/pvc.yaml
+kubectl apply -f manifests/jupyterlab.yaml
+```
+
+This assumes you're running Docker Desktop Kubernetes and exposes JupyterLab container at http://host.docker.internal.
+
+Refer to the [extension user guide](https://github.com/tinymultiverse/jupyterlab-tinyapp/blob/main/docs/USER_GUIDE.md) for how to preview app, view logs, deploy app, etc.

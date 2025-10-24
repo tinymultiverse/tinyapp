@@ -17,10 +17,13 @@ limitations under the License.
 package internal
 
 type EnvVars struct {
-	HttpPort          string `env:"HTTP_PORT" envDefault:"8889"`
-	MetricsEnabled    bool   `env:"METRICS_ENABLED" envDefault:"true"`
-	MetricsTlsEnabled bool   `env:"METRICS_TLS_ENABLED" envDefault:"false"`
-	MetricsPort       string `env:"METRICS_PORT"` // Required if METRICS_ENABLED is true
-	MetricsPath       string `env:"METRICS_PATH"` // Required if METRICS_ENABLED is true
-	TinyAppName       string `env:"TINY_APP_NAME,notEmpty"`
+	HttpPort               string `env:"HTTP_PORT" envDefault:"8005"`
+	PrimaryTargetPort      string `env:"PRIMARY_TARGET_PORT" envDefault:"5000"`
+	SecondaryTargetPattern string `env:"SECONDARY_TARGET_PATTERN" envDefault:""`
+	SecondaryTargetPort    string `env:"SECONDARY_TARGET_PORT" envDefault:""`
+	MetricsEnabled         bool   `env:"METRICS_ENABLED" envDefault:"true"`
+	MetricsTlsEnabled      bool   `env:"METRICS_TLS_ENABLED" envDefault:"false"`
+	MetricsPort            string `env:"METRICS_PORT"` // Required if METRICS_ENABLED is true
+	MetricsPath            string `env:"METRICS_PATH"` // Required if METRICS_ENABLED is true
+	URLSubPath             string `env:"URL_SUB_PATH" envDefault:"/"`
 }

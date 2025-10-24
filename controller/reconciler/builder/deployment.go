@@ -56,7 +56,7 @@ func BuildDeployment(app *v1alpha1.TinyApp, env internal.EnvVars) (*appsv1.Deplo
 	}
 
 	// Add volume for TLS secret
-	if env.GatewayMetricsTlsEnabled {
+	if env.GatewayMetricsTlsEnabled || app.Spec.IngressTlsEnabled {
 		volumes = append(volumes, corev1.Volume{
 			Name: globalutil.TLSSecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
@@ -278,7 +278,10 @@ func buildGatewayContainer(app *v1alpha1.TinyApp, env internal.EnvVars) corev1.C
 			},
 		},
 		ImagePullPolicy: corev1.PullAlways,
-		Env:             envs,
+		Args: []string{
+			"gateway",
+		},
+		Env: envs,
 		Resources: corev1.ResourceRequirements{
 			Requests: corev1.ResourceList{
 				corev1.ResourceCPU:    resource.MustParse(util.GatewayContainerCPURequest),
@@ -290,13 +293,14 @@ func buildGatewayContainer(app *v1alpha1.TinyApp, env internal.EnvVars) corev1.C
 				corev1.ResourceMemory: resource.MustParse(util.GatewayContainerMemoryLimit),
 			},
 		},
-		VolumeMounts: []corev1.VolumeMount{
-			{
-				Name:      globalutil.TLSSecretVolumeName,
-				MountPath: globalutil.TLSSecretMountPath,
-				ReadOnly:  true,
-			},
-		},
+	}
+
+	if env.GatewayMetricsTlsEnabled {
+		gatewayContainer.VolumeMounts = append(gatewayContainer.VolumeMounts, corev1.VolumeMount{
+			Name:      globalutil.TLSSecretVolumeName,
+			MountPath: globalutil.TLSSecretMountPath,
+			ReadOnly:  true,
+		})
 	}
 
 	return gatewayContainer

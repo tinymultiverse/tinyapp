@@ -23,8 +23,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tinymultiverse/tinyapp/pkg/k8s/client/tinyapp/clientset/versioned"
 	"github.com/tinymultiverse/tinyapp/server/internal"
-	"github.com/tinymultiverse/tinyapp/server/util"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 type Server struct {
@@ -34,18 +34,13 @@ type Server struct {
 	env           internal.EnvVars
 }
 
-func NewServer(env internal.EnvVars) (*Server, error) {
-	kubeConfig, err := util.GetKubeConfig(env.KubeConfigPath)
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get Kubernetes configuration")
-	}
-
-	tinyAppClient, err := versioned.NewForConfig(kubeConfig)
+func NewServer(env internal.EnvVars, k8sConfig *rest.Config) (*Server, error) {
+	tinyAppClient, err := versioned.NewForConfig(k8sConfig)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to make Kubernetes interface for TinyApp")
 	}
 
-	k8sClient, err := kubernetes.NewForConfig(kubeConfig)
+	k8sClient, err := kubernetes.NewForConfig(k8sConfig)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to create k8s client")
 	}

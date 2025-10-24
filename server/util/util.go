@@ -23,8 +23,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tinymultiverse/tinyapp/controller/reconciler/builder"
 	"github.com/tinymultiverse/tinyapp/util"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 func GetURLForTinyApp(domain, subPath, appId string, tlsEnabled bool) (string, error) {
@@ -45,11 +43,4 @@ func GetURLForTinyApp(domain, subPath, appId string, tlsEnabled bool) (string, e
 	}
 
 	return appUrl, nil
-}
-
-func GetKubeConfig(kubeconfig string) (*rest.Config, error) {
-	if kubeconfig != "" {
-		return clientcmd.BuildConfigFromFlags("", kubeconfig)
-	}
-	return rest.InClusterConfig()
 }

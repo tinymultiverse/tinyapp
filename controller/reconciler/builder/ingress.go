@@ -30,13 +30,12 @@ import (
 )
 
 func BuildIngress(app *v1alpha1.TinyApp, env internal.EnvVars) (*networkingv1.Ingress, error) {
-	pathType := networkingv1.PathTypeImplementationSpecific
+	pathType := networkingv1.PathTypePrefix
 
 	ingressPath, err := BuildIngressPath(app.Spec.IngressSubPath, app.Name)
 	if err != nil {
 		return nil, err
 	}
-	ingressPath = ingressPath + "(/|$)(.*)"
 
 	ingress := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
@@ -82,7 +81,7 @@ func BuildIngress(app *v1alpha1.TinyApp, env internal.EnvVars) (*networkingv1.In
 		}
 	}
 
-	hash, err := getObjectHash(ingress)
+	hash, err := getObjectHash(ingress.Spec)
 	if err != nil {
 		return nil, err
 	}

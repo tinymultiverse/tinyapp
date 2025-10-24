@@ -1,3 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tinyapp
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -184,20 +189,19 @@ spec:
       name: tinyapp-controller
     spec:
       containers:
-        - command:
-            - /bin/tinyapp-controller
+        - args: ["controller"]
           env:
             - name: TINY_APP_NAMESPACE
               value: tinyapp
             - name: APP_SERVICE_ACCOUNT
               value: default
             - name: GATEWAY_IMAGE
-              value: quay.io/tinymultiverse/tinyapp-gateway:latest
+              value: ghcr.io/tinymultiverse/tinyapp:latest
             - name: METRICS_ENABLED
               value: "false"
             - name: GIT_SYNC_IMAGE
               value: registry.k8s.io/git-sync/git-sync:v3.6.8
-          image: quay.io/tinymultiverse/tinyapp-controller:latest
+          image: ghcr.io/tinymultiverse/tinyapp:latest
           imagePullPolicy: Always
           name: controller
           resources:
@@ -231,13 +235,14 @@ spec:
     spec:
       containers:
         - name: tinyapp-server
-          image: quay.io/tinymultiverse/tinyapp-server:latest
+          image: ghcr.io/tinymultiverse/tinyapp:latest
           imagePullPolicy: Always
+          args: ["server"]
           env:
             - name: TINY_APP_NAMESPACE
               value: tinyapp
             - name: APP_INGRESS_DOMAIN
-              value: <your-app-ingress-domain>
+              value: host.docker.internal
           ports:
             - containerPort: 8889
               name: httpport

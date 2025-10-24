@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package cmd
 
 import (
 	"net/http"
@@ -34,15 +34,13 @@ import (
 
 var envVars internal.EnvVars
 
-func main() {
+func Start() {
 	logging.InitLoggerFromEnvironment()
 
 	envVars = internal.EnvVars{}
 	if err := env.Parse(&envVars); err != nil {
 		zap.S().Fatalw("could not process environment variables", "error", err)
 	}
-
-	prometheus.MustRegister(metrics.UsernameCounter)
 
 	proxyConfig, err := proxy.NewProxyServerConfig(envVars)
 	if err != nil {
@@ -52,21 +50,22 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/", proxyConfig)
 	addr := ":" + envVars.HttpPort
-	go func() {
-		zap.S().Info("starting proxy gateway")
-		if err := http.ListenAndServe(addr, mux); err != nil {
-			zap.S().Fatalw("could not start proxy server", "error", err)
-		}
-	}()
 
 	if envVars.MetricsEnabled {
 		if envVars.MetricsPath == "" || envVars.MetricsPort == "" {
 			zap.S().Fatal("METRICS_PATH and METRICS_PORT must be set if METRICS_ENABLED is true")
 		}
 
+		prometheus.MustRegister(metrics.UsernameCounter)
+
 		metricsMux := http.NewServeMux()
 		metricsMux.Handle(envVars.MetricsPath, promhttp.Handler())
 		metricsAddr := ":" + envVars.MetricsPort
+
+		go func() {
+			// Start the proxy server in a separate goroutine
+			startProxyServer(addr, mux)
+		}()
 
 		if envVars.MetricsTlsEnabled {
 			zap.S().Info("starting https metrics server")
@@ -79,5 +78,15 @@ func main() {
 				zap.S().Fatalw("could not start metrics server", "error", err)
 			}
 		}
+	} else {
+		// Start the proxy server directly if metrics are not enabled
+		startProxyServer(addr, mux)
+	}
+}
+
+func startProxyServer(addr string, mux *http.ServeMux) {
+	zap.S().Infow("starting proxy gateway", "addr", addr)
+	if err := http.ListenAndServe(addr, mux); err != nil {
+		zap.S().Fatalw("could not start proxy server", "error", err)
 	}
 }

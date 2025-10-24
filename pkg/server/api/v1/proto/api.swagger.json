@@ -270,7 +270,7 @@
             "type": "string",
             "enum": [
               "APP_TYPE_UNKNOWN",
-              "APP_TYPE_STREAM_LIT",
+              "APP_TYPE_STREAMLIT",
               "APP_TYPE_DASH"
             ],
             "default": "APP_TYPE_UNKNOWN"
@@ -348,7 +348,7 @@
       "type": "string",
       "enum": [
         "APP_TYPE_UNKNOWN",
-        "APP_TYPE_STREAM_LIT",
+        "APP_TYPE_STREAMLIT",
         "APP_TYPE_DASH"
       ],
       "default": "APP_TYPE_UNKNOWN"
