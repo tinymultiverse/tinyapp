@@ -18,7 +18,7 @@ mail: john@example.org
 uidNumber: 1000
 gidNumber: 1000
 homeDirectory: /home/john
-userPassword: {SSHA}k1CFQWbWUzpI97oHu95JfxA9i0x3wlbA
+userPassword: {SSHA}ziIUSA8rjnV+9TjNIhvxMHlMVil/L/Ue
 
 dn: cn=developers,ou=groups,dc=example,dc=org
 objectClass: posixGroup
