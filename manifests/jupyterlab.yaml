@@ -24,6 +24,8 @@ spec:
             - name: data-volume
               mountPath: /home/jovyan
           env:
+            - name: JUPYTER_BASE_URL
+              value: /jupyter
             - name: TINY_APP_SERVER_URL
               value: http://tinyapp-server.tinyapp.svc.cluster.local:8889
             - name: APP_PREVIEW_URL # Should be same as url jupyterlab is accessed from
@@ -34,6 +36,8 @@ spec:
               value: my-data
             - name: VOLUME_CLAIM_MOUNT_PATH
               value: "/home/jovyan"
+            - name: TINY_APP_IMAGE # Ideally should be same as jupyterlab image to ensure consistency
+              value: ghcr.io/tinymultiverse/jupyterlab-tinyapp:latest
           resources:
             limits:
               cpu: 250m
@@ -86,12 +90,11 @@ metadata:
   name: jupyterlab-with-tinyapp
   namespace: tinyapp
 spec:
-  ingressClassName: haproxy
   rules:
     - host: host.docker.internal
       http:
         paths:
-          - path: /
+          - path: /jupyter
             pathType: Prefix
             backend:
               service:

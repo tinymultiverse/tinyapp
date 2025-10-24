@@ -242,7 +242,7 @@ spec:
             - name: TINY_APP_NAMESPACE
               value: tinyapp
             - name: APP_INGRESS_DOMAIN
-              value: <your-app-ingress-domain>
+              value: host.docker.internal
           ports:
             - containerPort: 8889
               name: httpport
