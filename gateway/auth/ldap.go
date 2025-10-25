@@ -51,7 +51,39 @@ func (la *LDAPAuthenticator) AuthenticateRequest(req *http.Request) (string, err
 	}
 
 	// Authenticate against LDAP
+	authenticatedUser, err := la.authenticateLDAP(username, password)
+	if err != nil {
+		return "", err
+	}
+
+	// Check authorization
+	err = la.authorizeUser(authenticatedUser)
+	if err != nil {
+		return "", err
+	}
+
+	return authenticatedUser, nil
+}
+
+// Authenticate performs only LDAP authentication without authorization
+func (la *LDAPAuthenticator) Authenticate(req *http.Request) (string, error) {
+	if !la.config.LdapEnabled {
+		return "", nil // LDAP is disabled, skip authentication
+	}
+
+	// Extract credentials from Authorization header
+	username, password, err := la.extractCredentials(req)
+	if err != nil {
+		return "", err
+	}
+
+	// Authenticate against LDAP
 	return la.authenticateLDAP(username, password)
+}
+
+// AuthorizeUser checks if the authenticated user is in the allowed users list
+func (la *LDAPAuthenticator) AuthorizeUser(username string) error {
+	return la.authorizeUser(username)
 }
 
 // extractCredentials extracts username and password from Basic Auth header
@@ -182,4 +214,25 @@ func (la *LDAPAuthenticator) RequireAuth(w http.ResponseWriter) {
 	w.Header().Set("WWW-Authenticate", `Basic realm="LDAP Authentication"`)
 	w.WriteHeader(http.StatusUnauthorized)
 	w.Write([]byte("Unauthorized"))
+}
+
+// authorizeUser checks if the authenticated user is in the allowed users list
+func (la *LDAPAuthenticator) authorizeUser(username string) error {
+	if !la.config.AuthorizationEnabled {
+		return nil // Authorization is disabled, allow all authenticated users
+	}
+
+	if len(la.config.AllowedUsers) == 0 {
+		return nil // No restrictions if allowed users list is empty
+	}
+
+	for _, allowedUser := range la.config.AllowedUsers {
+		if strings.TrimSpace(allowedUser) == username {
+			zap.S().Debugw("user authorized", "username", username)
+			return nil
+		}
+	}
+
+	zap.S().Warnw("user not in allowed users list", "username", username, "allowedUsers", la.config.AllowedUsers)
+	return fmt.Errorf("user not authorized")
 }

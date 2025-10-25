@@ -70,19 +70,29 @@ func NewProxyServerConfig(envVars internal.EnvVars) (*proxyServerConfig, error) 
 func (p *proxyServerConfig) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	zap.S().Debugw("got a request", "host", req.Host, "method", req.Method, "requestURL", req.URL.String())
 
-	// Authenticate request if LDAP is enabled
-	username, err := p.authenticator.AuthenticateRequest(req)
+	// Step 1: Authenticate the user
+	username, err := p.authenticator.Authenticate(req)
 	if err != nil {
 		zap.S().Warnw("authentication failed", "error", err, "remoteAddr", req.RemoteAddr)
 		p.authenticator.RequireAuth(res)
 		return
 	}
 
+	// Step 2: Authorize the user (if authentication succeeded)
+	if username != "" {
+		err = p.authenticator.AuthorizeUser(username)
+		if err != nil {
+			zap.S().Warnw("authorization failed", "username", username, "error", err, "remoteAddr", req.RemoteAddr)
+			p.sendUnauthorizedResponse(res, username)
+			return
+		}
+	}
+
 	// Set the authenticated username for metrics and logging
 	authenticatedUser := globalutil.AnyUserName
 	if username != "" {
 		authenticatedUser = username
-		zap.S().Debugw("authenticated user", "username", username)
+		zap.S().Debugw("authenticated and authorized user", "username", username)
 	}
 
 	if p.SecondaryProxy != nil && strings.Contains(req.URL.Path, p.SecondaryTargetPattern) {
@@ -98,4 +108,31 @@ func (p *proxyServerConfig) ServeHTTP(res http.ResponseWriter, req *http.Request
 	}
 
 	p.Proxy.ServeHTTP(res, req)
+}
+
+// sendUnauthorizedResponse sends an HTML response for unauthorized users
+func (p *proxyServerConfig) sendUnauthorizedResponse(res http.ResponseWriter, username string) {
+	res.Header().Set("Content-Type", "text/html")
+	res.WriteHeader(http.StatusForbidden)
+	html := `<!DOCTYPE html>
+<html>
+<head>
+    <title>Access Denied</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 50px; text-align: center; }
+        .container { max-width: 500px; margin: 0 auto; }
+        h1 { color: #d32f2f; }
+        p { color: #666; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Access Denied</h1>
+        <p>You do not have access to this app.</p>
+        <p>User: ` + username + `</p>
+        <p>Please contact your administrator if you believe this is an error.</p>
+    </div>
+</body>
+</html>`
+	res.Write([]byte(html))
 }
