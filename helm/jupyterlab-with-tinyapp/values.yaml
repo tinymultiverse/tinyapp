@@ -15,6 +15,7 @@ jupyter:
   appPreviewUrl: http://tinymultiverse.local
   tinyAppImage: ghcr.io/tinymultiverse/jupyterlab-tinyapp:latest
   aiEnabled: "false"
+  openaiApiKey: ""
   volumeClaimName: my-data
   volumeClaimMountPath: /home/jovyan
   resources:
