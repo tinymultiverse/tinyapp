@@ -155,6 +155,7 @@ func ConvertToK8sTinyApp(in *pb.TinyAppDetail, objName string, envVars internal.
 			IngressDomain:       envVars.AppIngressDomain,
 			IngressSubPath:      envVars.AppIngressSubPath,
 			IngressTlsEnabled:   envVars.AppIngressTlsEnabled,
+            AllowedUsers:        in.AllowedUsers,
 		},
 	}, nil
 }

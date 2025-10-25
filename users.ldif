@@ -20,6 +20,20 @@ gidNumber: 1000
 homeDirectory: /home/john
 userPassword: {SSHA}ziIUSA8rjnV+9TjNIhvxMHlMVil/L/Ue
 
+dn: uid=jane,ou=people,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: top
+cn: Jane Doe
+sn: Doe
+givenName: Jane
+uid: jane
+mail: jane@example.org
+uidNumber: 1000
+gidNumber: 1000
+homeDirectory: /home/jane
+userPassword: {SSHA}ziIUSA8rjnV+9TjNIhvxMHlMVil/L/Ue
+
 dn: cn=developers,ou=groups,dc=example,dc=org
 objectClass: posixGroup
 cn: developers
