@@ -29,7 +29,7 @@ spec:
             - name: TINY_APP_SERVER_URL
               value: http://tinyapp-server.tinyapp.svc.cluster.local:8889
             - name: APP_PREVIEW_URL # Should be same as url jupyterlab is accessed from
-              value: http://host.docker.internal
+              value: http://tinymultiverse.local
             - name: AI_ENABLED
               value: "false"
             - name: VOLUME_CLAIM_NAME
@@ -91,7 +91,7 @@ metadata:
   namespace: tinyapp
 spec:
   rules:
-    - host: host.docker.internal
+    - host: tinymultiverse.local
       http:
         paths:
           - path: /jupyter

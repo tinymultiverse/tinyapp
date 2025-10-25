@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: jupyterlab-with-tinyapp
+  name: jupyterlab-with-tinyapp
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: jupyterlab-with-tinyapp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: jupyterlab-with-tinyapp
+      name: jupyterlab-with-tinyapp
+    spec:
+      containers:
+        - name: jupyter
+          image: {{ .Values.jupyter.image }}
+          imagePullPolicy: {{ .Values.jupyter.imagePullPolicy }}
+          volumeMounts:
+            - name: data-volume
+              mountPath: {{ .Values.jupyter.volumeClaimMountPath }}
+          env:
+            - name: JUPYTER_BASE_URL
+              value: {{ .Values.jupyter.baseUrl }}
+            - name: TINY_APP_SERVER_URL
+              value: {{ .Values.jupyter.tinyAppServerUrl }}
+            - name: APP_PREVIEW_URL
+              value: {{ .Values.jupyter.appPreviewUrl }}
+            - name: AI_ENABLED
+              value: {{ .Values.jupyter.aiEnabled | quote }}
+            - name: VOLUME_CLAIM_NAME
+              value: {{ .Values.jupyter.volumeClaimName }}
+            - name: VOLUME_CLAIM_MOUNT_PATH
+              value: {{ .Values.jupyter.volumeClaimMountPath | quote }}
+            - name: TINY_APP_IMAGE
+              value: {{ .Values.jupyter.tinyAppImage }}
+          resources:
+            limits:
+              cpu: {{ .Values.jupyter.resources.limits.cpu }}
+              memory: {{ .Values.jupyter.resources.limits.memory }}
+            requests:
+              cpu: {{ .Values.jupyter.resources.requests.cpu }}
+              memory: {{ .Values.jupyter.resources.requests.memory }}
+        - name: gateway
+          image: {{ .Values.gateway.image }}
+          imagePullPolicy: {{ .Values.gateway.imagePullPolicy }}
+          args: ["gateway"]
+          env:
+            - name: PRIMARY_TARGET_PORT
+              value: {{ .Values.gateway.primaryTargetPort | quote }}
+            - name: SECONDARY_TARGET_PATTERN
+              value: {{ .Values.gateway.secondaryTargetPattern }}
+            - name: SECONDARY_TARGET_PORT
+              value: {{ .Values.gateway.secondaryTargetPort | quote }}
+            - name: METRICS_ENABLED
+              value: {{ .Values.gateway.metricsEnabled | quote }}
+            - name: LOG_TYPE
+              value: {{ .Values.gateway.logType }}
+          resources:
+            limits:
+              cpu: {{ .Values.gateway.resources.limits.cpu }}
+              memory: {{ .Values.gateway.resources.limits.memory }}
+            requests:
+              cpu: {{ .Values.gateway.resources.requests.cpu }}
+              memory: {{ .Values.gateway.resources.requests.memory }}
+      volumes:
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: {{ .Values.volume.claimName }}

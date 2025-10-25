@@ -1,0 +1,113 @@
+{{- if .Values.rbac.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Values.controller.name }}
+  namespace: {{ .Values.tinyAppNamespace }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - configmaps
+      - secrets
+    verbs:
+      - "*"
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - replicasets
+    verbs:
+      - "*"
+  - apiGroups:
+      - extensions
+      - networking.k8s.io
+    resources:
+      - ingresses
+    verbs:
+      - "*"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Values.controller.name }}
+  namespace: {{ .Values.tinyAppNamespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ .Values.controller.name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.serviceAccounts.controller }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Values.server.name }}
+  namespace: {{ .Values.tinyAppNamespace }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - "*"
+  - apiGroups:
+      - ""
+    resources:
+      - events
+      - pods
+      - pods/log
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Values.server.name }}
+  namespace: {{ .Values.tinyAppNamespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ .Values.server.name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.serviceAccounts.server }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tinyapp
+  namespace: {{ .Values.tinyAppNamespace }}
+rules:
+  - apiGroups:
+      - "tinymultiverse.ai"
+    resources:
+      - tinyapps
+      - tinyapps/status
+      - tinyapps/finalizers
+    verbs:
+      - "*"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tinyapp
+  namespace: {{ .Values.tinyAppNamespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: tinyapp
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.serviceAccounts.controller }}
+    namespace: {{ .Release.Namespace }}
+  - kind: ServiceAccount
+    name: {{ .Values.serviceAccounts.server }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

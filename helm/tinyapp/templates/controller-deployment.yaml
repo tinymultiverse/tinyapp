@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: {{ .Values.controller.name }}
+    app.kubernetes.io/part-of: tinyapp
+  name: {{ .Values.controller.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.controller.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.controller.name }}
+      app.kubernetes.io/part-of: tinyapp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Values.controller.name }}
+        app.kubernetes.io/part-of: tinyapp
+      name: {{ .Values.controller.name }}
+    spec:
+      containers:
+        - args: ["controller"]
+          env:
+            - name: TINY_APP_NAMESPACE
+              value: {{ .Values.tinyAppNamespace }}
+            - name: APP_SERVICE_ACCOUNT
+              value: {{ .Values.controller.appServiceAccount }}
+            - name: GATEWAY_IMAGE
+              value: {{ .Values.controller.gatewayImage }}
+            - name: METRICS_ENABLED
+              value: {{ .Values.controller.metricsEnabled | quote }}
+            - name: GATEWAY_METRICS_PORT
+              value: {{ .Values.controller.gatewayMetricsPort | quote }}
+            - name: GATEWAY_METRICS_PATH
+              value: {{ .Values.controller.gatewayMetricsPath }}
+            - name: GATEWAY_METRICS_TLS_ENABLED
+              value: {{ .Values.controller.gatewayMetricsTlsEnabled | quote }}
+            - name: GIT_SYNC_IMAGE
+              value: {{ .Values.controller.gitSyncImage }}
+            - name: TLS_SECRET_NAME
+              value: {{ .Values.controller.tlsSecretName }}
+          image: {{ .Values.controller.image }}
+          imagePullPolicy: {{ .Values.controller.imagePullPolicy }}
+          name: controller
+          resources:
+            limits:
+              cpu: {{ .Values.controller.resources.limits.cpu }}
+              memory: {{ .Values.controller.resources.limits.memory }}
+            requests:
+              cpu: {{ .Values.controller.resources.requests.cpu }}
+              memory: {{ .Values.controller.resources.requests.memory }}
+      serviceAccountName: {{ .Values.serviceAccounts.controller }}

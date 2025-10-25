@@ -6,6 +6,7 @@ Getting started with Tiny App is easy.
 - Installed [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) command-line tool.
 - Have a [kubeconfig](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/)
 file (default location is `~/.kube/config`).
+- Installed [helm](https://helm.sh/docs/intro/install/).
 - Default ingress controller running in your cluster (ingressclass with annotation ingressclass.kubernetes.io/is-default-class=true).
 
 #### Install HAProxy Ingress Controller (Optional)
@@ -28,41 +29,75 @@ helm install haproxy-ingress haproxytech/kubernetes-ingress \
 kubectl annotate ingressclass haproxy ingressclass.kubernetes.io/is-default-class=true
 ```
 
-## Install Tiny App Components
+### Configure Domain (If running on local machine)
 
-Clone this repository and fill in value for APP_INGRESS_DOMAIN environment variable in manifests/install.yaml. If you're running Docker Desktop Kubernetes, you can set it to "host.docker.internal".
+If your cluster is running on local machine (Docker Desktop k8s, Minikube etc.), add the following entry to /etc/hosts (Linux or Mac) or C:\Windows\System32\drivers\etc\hosts (Windows):
 
 ```bash
-kubectl create namespace tinyapp
-kubectl apply -n tinyapp -f manifests/install.yaml
+127.0.0.1  tinymultiverse.local
 ```
 
-#### Prometheus
+## Install Tiny App Components
+
+If you want to enable TLS and/or metrics, read further before executing:
+
+```bash
+helm install tinyapp ./helm/tinyapp --namespace tinyapp --create-namespace --set server.appIngressDomain=tinymultiverse.local
+```
+
+If you have a different domain set up for your cluster, you should use that instead of tinymultiverse.local.
+
+#### With TLS
+
+To enable TLS for TinyApp URLs, add the following options:
+
+```bash
+--set server.appIngressTlsEnabled=true \
+--set controller.tlsSecretName=<SECRET_NAME>
+```
+
+TLS secret should exist in the same namespace as TinyApp controller.
+
+#### Metrics/Prometheus
 
 If you don't already have Prometheus set up for your cluster, check out the
 [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator).
 
-By default, app containers expose metrics at port '9090' and path '/metrics'. To customize, you can set
-GATEWAY_METRICS_PORT & GATEWAY_METRICS_PATH environment variables for tinyapp-controller deployment.
+By default, app containers expose metrics at port '9090' and path '/metrics'. To customize, you can override:
 
-To enable TLS, set GATEWAY_METRICS_TLS_ENABLED and TLS_SECRET_NAME environment variables for tinyapp-controller
-deployment.
-
-#### Notes
-- To configure TLS for app ingress, set APP_INGRESS_TLS_ENABLED env var for tinyapp-server and TLS_SECRET_NAME for
-tinyapp-controller.
+```bash
+--set controller.metricsEnabled=true \
+--set controller.gatewayMetricsPort=9090 \
+--set controller.gatewayMetricsPath=/metrics \
+--set controller.gatewayMetricsTlsEnabled=true \
+--set controller.tlsSecretName=<SECRET_NAME>
+```
 
 ## Deploy TinyApp
 
 #### Using JupyterLab Extension
 
-Start a JupyterLab container by running:
+Create a Persistent Volume Claim if you don't have one configured already.
 
 ```bash
 kubectl apply -f manifests/pvc.yaml
-kubectl apply -f manifests/jupyterlab.yaml
 ```
 
-This assumes you're running Docker Desktop Kubernetes and exposes JupyterLab container at http://host.docker.internal.
+If you get an error, you may need to update storageClassName in manifests/pvc.yaml.
+
+```bash
+kubectl get storageclass
+```
+
+Start a JupyterLab container by running:
+
+```bash
+helm install my-jupyterlab ./helm/jupyterlab-with-tinyapp \
+  --set jupyter.appPreviewUrl=http://tinymultiverse.local \
+  --set jupyter.aiEnabled=false \
+  --set ingress.host=tinymultiverse.local
+```
+
+You should now be able to access jupyterlab at http://tinymultiverse.local/jupyter.
 
 Refer to the [extension user guide](https://github.com/tinymultiverse/jupyterlab-tinyapp/blob/main/docs/USER_GUIDE.md) for how to preview app, view logs, deploy app, etc.
