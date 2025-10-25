@@ -6,6 +6,7 @@ Getting started with Tiny App is easy.
 - Installed [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) command-line tool.
 - Have a [kubeconfig](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/)
 file (default location is `~/.kube/config`).
+- Installed [helm](https://helm.sh/docs/intro/install/).
 - Default ingress controller running in your cluster (ingressclass with annotation ingressclass.kubernetes.io/is-default-class=true).
 
 #### Install HAProxy Ingress Controller (Optional)
@@ -33,7 +34,7 @@ kubectl annotate ingressclass haproxy ingressclass.kubernetes.io/is-default-clas
 If your cluster is running on local machine (Docker Desktop k8s, Minikube etc.), add the following entry to /etc/hosts (Linux or Mac) or C:\Windows\System32\drivers\etc\hosts (Windows):
 
 ```bash
-127.0.0.1  host.docker.internal
+127.0.0.1  tinymultiverse.local
 ```
 
 ## Install Tiny App Components
@@ -41,10 +42,10 @@ If your cluster is running on local machine (Docker Desktop k8s, Minikube etc.),
 If you want to enable TLS and/or metrics, read further before executing:
 
 ```bash
-helm install tinyapp ./helm/tinyapp --set server.appIngressDomain=host.docker.internal
+helm install tinyapp ./helm/tinyapp --namespace tinyapp --create-namespace --set server.appIngressDomain=tinymultiverse.local
 ```
 
-If you have a different domain set up for your cluster, you should use that instead of host.docker.internal.
+If you have a different domain set up for your cluster, you should use that instead of tinymultiverse.local.
 
 #### With TLS
 
@@ -92,9 +93,11 @@ Start a JupyterLab container by running:
 
 ```bash
 helm install my-jupyterlab ./helm/jupyterlab-with-tinyapp \
-  --set jupyter.appPreviewUrl=http://host.docker.internal \
+  --set jupyter.appPreviewUrl=http://tinymultiverse.local \
   --set jupyter.aiEnabled=false \
-  --set ingress.host=host.docker.internal
+  --set ingress.host=tinymultiverse.local
 ```
+
+You should now be able to access jupyterlab at http://tinymultiverse.local/jupyter.
 
 Refer to the [extension user guide](https://github.com/tinymultiverse/jupyterlab-tinyapp/blob/main/docs/USER_GUIDE.md) for how to preview app, view logs, deploy app, etc.

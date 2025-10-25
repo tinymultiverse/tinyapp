@@ -12,7 +12,7 @@ jupyter:
   imagePullPolicy: Always
   baseUrl: /jupyter
   tinyAppServerUrl: http://tinyapp-server.tinyapp.svc.cluster.local:8889
-  appPreviewUrl: http://host.docker.internal
+  appPreviewUrl: http://tinymultiverse.local
   tinyAppImage: ghcr.io/tinymultiverse/jupyterlab-tinyapp:latest
   aiEnabled: "false"
   volumeClaimName: my-data
@@ -54,6 +54,6 @@ service:
 # Ingress configuration
 ingress:
   enabled: true
-  host: host.docker.internal
+  host: tinymultiverse.local
   path: /jupyter
   pathType: Prefix

@@ -52,7 +52,7 @@ The following table lists the configurable parameters that can be overridden:
 | Parameter                             | Description                    | Default                                 |
 | ------------------------------------- | ------------------------------ | --------------------------------------- |
 | `namespace`                           | Namespace for all resources    | `tinyapp`                               |
-| `server.appIngressDomain`             | Domain for app ingress         | `host.docker.internal`                  |
+| `server.appIngressDomain`             | Domain for app ingress         | `tinymultiverse.local`                  |
 | `server.appIngressTlsEnabled`         | Enable TLS for app ingress     | `"false"`                               |
 | `controller.tlsSecretName`            | TLS secret name for controller | `""` (empty)                            |
 | `controller.metricsEnabled`           | Enable metrics for gateway     | `"false"`                               |

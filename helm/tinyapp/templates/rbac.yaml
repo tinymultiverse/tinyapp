@@ -3,7 +3,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: {{ .Values.controller.name }}
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.tinyAppNamespace }}
 rules:
   - apiGroups:
       - ""
@@ -32,7 +32,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: {{ .Values.controller.name }}
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.tinyAppNamespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -40,13 +40,13 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.serviceAccounts.controller }}
-    namespace: {{ .Values.namespace }}
+    namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: {{ .Values.server.name }}
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.tinyAppNamespace }}
 rules:
   - apiGroups:
       - ""
@@ -69,7 +69,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: {{ .Values.server.name }}
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.tinyAppNamespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -77,13 +77,13 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.serviceAccounts.server }}
-    namespace: {{ .Values.namespace }}
+    namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: tinyapp
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.tinyAppNamespace }}
 rules:
   - apiGroups:
       - "tinymultiverse.ai"
@@ -98,7 +98,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: tinyapp
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.tinyAppNamespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -106,8 +106,8 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.serviceAccounts.controller }}
-    namespace: {{ .Values.namespace }}
+    namespace: {{ .Release.Namespace }}
   - kind: ServiceAccount
     name: {{ .Values.serviceAccounts.server }}
-    namespace: {{ .Values.namespace }}
+    namespace: {{ .Release.Namespace }}
 {{- end }}
