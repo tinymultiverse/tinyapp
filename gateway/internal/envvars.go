@@ -21,21 +21,21 @@ type EnvVars struct {
 	PrimaryTargetPort      string `env:"PRIMARY_TARGET_PORT" envDefault:"5000"`
 	SecondaryTargetPattern string `env:"SECONDARY_TARGET_PATTERN" envDefault:""`
 	SecondaryTargetPort    string `env:"SECONDARY_TARGET_PORT" envDefault:""`
-	MetricsEnabled         bool   `env:"METRICS_ENABLED" envDefault:"true"`
+	MetricsEnabled         bool   `env:"METRICS_ENABLED" envDefault:"false"`
 	MetricsTlsEnabled      bool   `env:"METRICS_TLS_ENABLED" envDefault:"false"`
-	MetricsPort            string `env:"METRICS_PORT"` // Required if METRICS_ENABLED is true
-	MetricsPath            string `env:"METRICS_PATH"` // Required if METRICS_ENABLED is true
+	MetricsPort            string `env:"METRICS_PORT" default:"9090"` // Required if METRICS_ENABLED is true
+	MetricsPath            string `env:"METRICS_PATH"`                // Required if METRICS_ENABLED is true
 	URLSubPath             string `env:"URL_SUB_PATH" envDefault:"/"`
 	// LDAP Configuration
-	LdapEnabled          bool   `env:"LDAP_ENABLED" envDefault:"true"`
-	LdapServer           string `env:"LDAP_SERVER" envDefault:"openldap.tinyapp.svc.cluster.local"` // Required if LDAP_ENABLED is true
-	LdapPort             int    `env:"LDAP_PORT" envDefault:"389"`                                  // 389 for LDAP, 636 for LDAPS
-	LdapTLS              bool   `env:"LDAP_TLS" envDefault:"false"`                                 // Use TLS connection
-	LdapBaseDN           string `env:"LDAP_BASE_DN" envDefault:"ou=people,dc=example,dc=org"`       // Required if LDAP_ENABLED is true
-	LdapBindDN           string `env:"LDAP_BIND_DN" envDefault:"cn=admin,dc=example,dc=org"`        // Service account DN for searching
-	LdapBindPassword     string `env:"LDAP_BIND_PASSWORD" envDefault:"adminpassword"`               // Service account password
+	LdapEnabled          bool     `env:"LDAP_ENABLED" envDefault:"true"`
+	LdapServer           string   `env:"LDAP_SERVER" envDefault:"openldap.tinyapp.svc.cluster.local"` // Required if LDAP_ENABLED is true
+	LdapPort             int      `env:"LDAP_PORT" envDefault:"389"`                                  // 389 for LDAP, 636 for LDAPS
+	LdapTLS              bool     `env:"LDAP_TLS" envDefault:"false"`                                 // Use TLS connection
+	LdapBaseDN           string   `env:"LDAP_BASE_DN" envDefault:"ou=people,dc=example,dc=org"`       // Required if LDAP_ENABLED is true
+	LdapBindDN           string   `env:"LDAP_BIND_DN" envDefault:"cn=admin,dc=example,dc=org"`        // Service account DN for searching
+	LdapBindPassword     string   `env:"LDAP_BIND_PASSWORD" envDefault:"adminpassword"`               // Service account password
 	LdapUserAttribute    string   `env:"LDAP_USER_ATTRIBUTE" envDefault:"uid"`                        // Attribute to search for username
 	LdapUserFilter       string   `env:"LDAP_USER_FILTER"`                                            // Additional filter for user search
 	AuthorizationEnabled bool     `env:"AUTHORIZATION_ENABLED" envDefault:"true"`
-	AllowedUsers         []string `env:"ALLOWED_USERS" envSeparator:","` // Array of allowed users
+	AllowedUsers         []string `env:"ALLOWED_USERS" default:""` // Comma-separated list of allowed usernames
 }

@@ -71,6 +71,8 @@ type TinyAppSpec struct {
 	IngressSubPath string `json:"ingressSubPath"`
 	// IngressTlsEnabled specified whether Tls is enabled for ingress.
 	IngressTlsEnabled bool `json:"ingressTlsEnabled"`
+	// AllowedUsers is a list of usernames allowed to access the app.
+	AllowedUsers []string `json:"allowedUsers,omitempty"`
 }
 
 type AppType string

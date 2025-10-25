@@ -314,6 +314,7 @@ func buildGatewayEnvVars(app *v1alpha1.TinyApp, env internal.EnvVars) []corev1.E
 		{Name: "METRICS_TLS_ENABLED", Value: strconv.FormatBool(env.GatewayMetricsTlsEnabled)},
 		{Name: "METRICS_PORT", Value: env.GatewayMetricsPort},
 		{Name: "METRICS_PATH", Value: env.GatewayMetricsPath},
+		{Name: "ALLOWED_USERS", Value: strings.Join(app.Spec.AllowedUsers, ",")},
 	}
 
 	envVars = append(envVars, buildEnvVarsList(env.GatewayEnvVars)...)
