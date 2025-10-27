@@ -94,7 +94,10 @@ Start a JupyterLab container by running:
 ```bash
 helm install my-jupyterlab ./helm/jupyterlab-with-tinyapp \
   --set jupyter.appPreviewUrl=http://tinymultiverse.local \
-  --set jupyter.aiEnabled=false \
+  --set jupyter.aiEnabled=true \
+  --set jupyter.openaiApiKey=<YOUR_OPENAI_KEY> \
+  --set jupyter.openaiTextModel=gpt-4.1 \
+  --set jupyter.openaiImageModel=gpt-5 \
   --set ingress.host=tinymultiverse.local
 ```
 
