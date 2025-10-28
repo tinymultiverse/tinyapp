@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TinyApp Test Backend</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .status { padding: 20px; border-radius: 5px; margin: 20px 0; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 TinyApp Test Backend</h1>
+        
+        <div class="status success">
+            <h3>✅ Authentication Successful!</h3>
+            <p>You have successfully accessed the protected application through the OIDC-enabled gateway.</p>
+        </div>
+        
+        <div class="status info">
+            <h3>ℹ️ What's happening:</h3>
+            <ul>
+                <li>You were redirected to the OIDC provider for authentication</li>
+                <li>After login, you were redirected back to the gateway</li>
+                <li>The gateway validated your identity and created a session</li>
+                <li>This request was proxied to the backend application</li>
+                <li>Your username is being tracked in the gateway metrics</li>
+            </ul>
+        </div>
+        
+        <h3>🔗 Test Links:</h3>
+        <ul>
+            <li><a href="/auth/logout">Logout</a> - Clear your session</li>
+            <li><a href="/">Home</a> - Return to this page</li>
+            <li><a href="/some/path">Test Different Path</a> - Test routing</li>
+        </ul>
+        
+        <h3>📊 Gateway Metrics:</h3>
+        <p>Check the gateway metrics at: <a href="http://localhost:9090/metrics" target="_blank">http://localhost:9090/metrics</a></p>
+        <p>Look for the <code>username_counter</code> metric to see your authenticated username being tracked.</p>
+        
+        <hr>
+        <p><small>This is a test backend service running on port 5001, proxied through the TinyApp Gateway with OIDC authentication.</small></p>
+    </div>
+</body>
+</html>

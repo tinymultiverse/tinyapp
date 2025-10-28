@@ -1,0 +1,32 @@
+# Docker Compose file for testing OIDC authentication locally
+version: '3.8'
+
+services:
+  # Simple OIDC provider for testing using Keycloak
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    command: start-dev --import-realm
+    ports:
+      - "9000:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 8080
+    volumes:
+      - ./keycloak-realm.json:/opt/keycloak/data/import/realm.json:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/realms/tinyapp/.well-known/openid_configuration"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Mock backend service for testing
+  mock-backend:
+    image: nginx:alpine
+    ports:
+      - "5001:80"
+    volumes:
+      - ./test-content:/usr/share/nginx/html:ro
+    environment:
+      - NGINX_PORT=80
