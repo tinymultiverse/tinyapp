@@ -23,6 +23,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/tinymultiverse/tinyapp/gateway/auth"
 	"github.com/tinymultiverse/tinyapp/gateway/internal"
 	"github.com/tinymultiverse/tinyapp/gateway/util/metrics"
 	globalutil "github.com/tinymultiverse/tinyapp/util"
@@ -34,6 +35,7 @@ type proxyServerConfig struct {
 	SecondaryProxy         *httputil.ReverseProxy
 	SecondaryTargetPattern string
 	URLSubPath             string
+	OIDCAuth               *auth.OIDCAuth
 }
 
 func NewProxyServerConfig(envVars internal.EnvVars) (*proxyServerConfig, error) {
@@ -53,11 +55,18 @@ func NewProxyServerConfig(envVars internal.EnvVars) (*proxyServerConfig, error) 
 		secondaryProxy = httputil.NewSingleHostReverseProxy(secondaryTargetUrl)
 	}
 
+	// Initialize OIDC authentication if enabled
+	oidcAuth, err := auth.NewOIDCAuth(envVars)
+	if err != nil {
+		return nil, err
+	}
+
 	return &proxyServerConfig{
 		Proxy:                  proxy,
 		SecondaryProxy:         secondaryProxy,
 		SecondaryTargetPattern: envVars.SecondaryTargetPattern,
 		URLSubPath:             envVars.URLSubPath,
+		OIDCAuth:               oidcAuth,
 	}, nil
 }
 
@@ -73,8 +82,23 @@ func (p *proxyServerConfig) ServeHTTP(res http.ResponseWriter, req *http.Request
 	// Only increment user count if the request URL is app homepage
 	if path.Clean(req.URL.Path) == path.Clean(p.URLSubPath) {
 		zap.S().Info("Incrementing user count")
-		// TODO Once integrated with OAuth, get actual username from auth server
-		metrics.UsernameCounter.WithLabelValues(globalutil.AnyUserName).Inc()
+
+		// Get actual username from OIDC if authentication is enabled
+		username := globalutil.AnyUserName
+		if p.OIDCAuth != nil {
+			if userInfo, err := p.OIDCAuth.GetUserInfo(req); err == nil {
+				// Use preferred username if available, otherwise use email or sub
+				if userInfo.PreferredUsername != "" {
+					username = userInfo.PreferredUsername
+				} else if userInfo.Email != "" {
+					username = userInfo.Email
+				} else {
+					username = userInfo.Sub
+				}
+			}
+		}
+
+		metrics.UsernameCounter.WithLabelValues(username).Inc()
 	}
 
 	p.Proxy.ServeHTTP(res, req)

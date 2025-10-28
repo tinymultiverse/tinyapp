@@ -26,4 +26,12 @@ type EnvVars struct {
 	MetricsPort            string `env:"METRICS_PORT"` // Required if METRICS_ENABLED is true
 	MetricsPath            string `env:"METRICS_PATH"` // Required if METRICS_ENABLED is true
 	URLSubPath             string `env:"URL_SUB_PATH" envDefault:"/"`
+
+	// OIDC Configuration
+	OIDCEnabled      bool   `env:"OIDC_ENABLED" envDefault:"false"`
+	OIDCIssuerURL    string `env:"OIDC_ISSUER_URL"`    // Required if OIDC_ENABLED is true
+	OIDCClientID     string `env:"OIDC_CLIENT_ID"`     // Required if OIDC_ENABLED is true
+	OIDCClientSecret string `env:"OIDC_CLIENT_SECRET"` // Required if OIDC_ENABLED is true
+	OIDCRedirectURL  string `env:"OIDC_REDIRECT_URL"`  // Required if OIDC_ENABLED is true
+	OIDCScopes       string `env:"OIDC_SCOPES" envDefault:"openid,profile,email"`
 }

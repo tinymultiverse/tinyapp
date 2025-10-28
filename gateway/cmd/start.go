@@ -42,13 +42,29 @@ func Start() {
 		zap.S().Fatalw("could not process environment variables", "error", err)
 	}
 
+	// Validate OIDC configuration if enabled
+	if envVars.OIDCEnabled {
+		if envVars.OIDCIssuerURL == "" || envVars.OIDCClientID == "" ||
+			envVars.OIDCClientSecret == "" || envVars.OIDCRedirectURL == "" {
+			zap.S().Fatal("OIDC_ISSUER_URL, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET, and OIDC_REDIRECT_URL must be set if OIDC_ENABLED is true")
+		}
+	}
+
 	proxyConfig, err := proxy.NewProxyServerConfig(envVars)
 	if err != nil {
 		zap.S().Fatalw("failed to set up proxy", "error", err)
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/", proxyConfig)
+
+	// Apply OIDC middleware if enabled
+	var handler http.Handler = proxyConfig
+	if proxyConfig.OIDCAuth != nil {
+		zap.S().Info("OIDC authentication enabled")
+		handler = proxyConfig.OIDCAuth.Middleware(proxyConfig)
+	}
+
+	mux.Handle("/", handler)
 	addr := ":" + envVars.HttpPort
 
 	if envVars.MetricsEnabled {
