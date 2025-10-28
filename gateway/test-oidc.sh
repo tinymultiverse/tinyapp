@@ -64,7 +64,7 @@ echo "⚙️  Loading test configuration..."
 export $(grep -v '^#' .env.test | xargs)
 
 echo "🚀 Starting TinyApp Gateway..."
-./gateway-test &
+go run ../cmd/main.go gateway &
 GATEWAY_PID=$!
 
 # Wait a moment for the gateway to start

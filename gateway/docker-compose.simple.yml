@@ -9,30 +9,6 @@ services:
       - "9000:8080"
     environment:
       SERVER_PORT: 8080
-      JSON_CONFIG: |
-        {
-          "interactiveLogin": true,
-          "httpServer": "NettyWrapper",
-          "tokenCallbacks": [
-            {
-              "issuerId": "default",
-              "tokenExpiry": 3600,
-              "requestMappings": [
-                {
-                  "requestParam": "scope",
-                  "match": ".*",
-                  "claims": {
-                    "sub": "testuser-123",
-                    "email": "test@example.com",
-                    "name": "Test User",
-                    "preferred_username": "testuser",
-                    "email_verified": true
-                  }
-                }
-              ]
-            }
-          ]
-        }
 
   # Mock backend service for testing
   mock-backend:

@@ -34,4 +34,12 @@ type EnvVars struct {
 	OIDCClientSecret string `env:"OIDC_CLIENT_SECRET"` // Required if OIDC_ENABLED is true
 	OIDCRedirectURL  string `env:"OIDC_REDIRECT_URL"`  // Required if OIDC_ENABLED is true
 	OIDCScopes       string `env:"OIDC_SCOPES" envDefault:"openid,profile,email"`
+
+	// Authorization Configuration
+	AuthzEnabled        bool   `env:"AUTHZ_ENABLED" envDefault:"false"`     // Enable role-based authorization
+	AuthzRequiredRoles  string `env:"AUTHZ_REQUIRED_ROLES" envDefault:""`   // Comma-separated list of required roles
+	AuthzRequiredScopes string `env:"AUTHZ_REQUIRED_SCOPES" envDefault:""`  // Comma-separated list of required OAuth scopes
+	AuthzRoleClaim      string `env:"AUTHZ_ROLE_CLAIM" envDefault:"roles"`  // JWT claim containing user roles
+	AuthzScopeClaim     string `env:"AUTHZ_SCOPE_CLAIM" envDefault:"scope"` // JWT claim containing OAuth scopes
+	AuthzAdminRoles     string `env:"AUTHZ_ADMIN_ROLES" envDefault:"admin"` // Comma-separated list of admin roles (bypass all checks)
 }

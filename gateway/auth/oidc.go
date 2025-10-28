@@ -45,14 +45,18 @@ type OIDCAuth struct {
 	oauth2Config oauth2.Config
 	verifier     *oidc.IDTokenVerifier
 	scopes       []string
+	envVars      internal.EnvVars
 }
 
 type UserInfo struct {
-	Sub               string `json:"sub"`
-	Name              string `json:"name"`
-	Email             string `json:"email"`
-	EmailVerified     bool   `json:"email_verified"`
-	PreferredUsername string `json:"preferred_username"`
+	Sub               string   `json:"sub"`
+	Name              string   `json:"name"`
+	Email             string   `json:"email"`
+	EmailVerified     bool     `json:"email_verified"`
+	PreferredUsername string   `json:"preferred_username"`
+	Roles             []string `json:"roles"`  // User roles for authorization
+	Scope             string   `json:"scope"`  // OAuth scopes
+	Groups            []string `json:"groups"` // User groups (alternative to roles)
 }
 
 type SessionData struct {
@@ -96,6 +100,7 @@ func NewOIDCAuth(envVars internal.EnvVars) (*OIDCAuth, error) {
 		oauth2Config: oauth2Config,
 		verifier:     verifier,
 		scopes:       scopes,
+		envVars:      envVars,
 	}, nil
 }
 
@@ -211,6 +216,56 @@ func (o *OIDCAuth) handleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Extract additional claims for authorization
+	var allClaims map[string]interface{}
+	if err := idToken.Claims(&allClaims); err != nil {
+		zap.S().Warnw("failed to extract additional claims", "error", err)
+	} else {
+		zap.S().Debugw("all JWT claims", "claims", allClaims)
+		
+		// Extract roles from custom claim
+		roleClaim := o.envVars.AuthzRoleClaim
+		zap.S().Debugw("looking for role claim", "claim_name", roleClaim)
+		if roleValue, exists := allClaims[roleClaim]; exists {
+			zap.S().Debugw("found role claim", "claim_name", roleClaim, "value", roleValue, "type", fmt.Sprintf("%T", roleValue))
+			if roles, ok := o.extractStringSlice(roleValue); ok {
+				userInfo.Roles = roles
+				zap.S().Debugw("extracted roles", "roles", roles)
+			} else {
+				zap.S().Warnw("failed to extract roles from claim", "claim_name", roleClaim, "value", roleValue)
+			}
+		} else {
+			zap.S().Warnw("role claim not found in token", "claim_name", roleClaim, "available_claims", func() []string {
+				keys := make([]string, 0, len(allClaims))
+				for k := range allClaims {
+					keys = append(keys, k)
+				}
+				return keys
+			}())
+		}
+
+		// Extract groups (alternative to roles)
+		if groupClaim, exists := allClaims["groups"]; exists {
+			if groups, ok := o.extractStringSlice(groupClaim); ok {
+				userInfo.Groups = groups
+			}
+		}
+
+		// Extract scope claim for OAuth scopes
+		if scopeClaim, exists := allClaims[o.envVars.AuthzScopeClaim]; exists {
+			if scope, ok := scopeClaim.(string); ok {
+				userInfo.Scope = scope
+			}
+		}
+	}
+
+	zap.S().Infow("user authenticated successfully",
+		"user", userInfo.Sub,
+		"email", userInfo.Email,
+		"roles", userInfo.Roles,
+		"groups", userInfo.Groups,
+		"scope", userInfo.Scope)
+
 	// Create session
 	sessionData := SessionData{
 		UserInfo:  userInfo,
@@ -304,6 +359,126 @@ func (o *OIDCAuth) GetUserInfo(r *http.Request) (*UserInfo, error) {
 	}
 
 	return &sessionData.UserInfo, nil
+}
+
+// CheckAuthorization verifies if the user has the required roles and scopes
+func (o *OIDCAuth) CheckAuthorization(r *http.Request) error {
+	if !o.envVars.AuthzEnabled {
+		return nil // Authorization disabled, allow access
+	}
+
+	userInfo, err := o.GetUserInfo(r)
+	if err != nil {
+		return fmt.Errorf("authorization failed: %w", err)
+	}
+
+	// Check if user has admin role (bypasses all other checks)
+	if o.envVars.AuthzAdminRoles != "" {
+		adminRoles := o.parseCommaSeparated(o.envVars.AuthzAdminRoles)
+		if o.hasAnyRole(userInfo, adminRoles) {
+			zap.S().Debugw("user has admin role, bypassing authorization checks", "user", userInfo.Sub)
+			return nil
+		}
+	}
+
+	// Check required roles
+	if o.envVars.AuthzRequiredRoles != "" {
+		requiredRoles := o.parseCommaSeparated(o.envVars.AuthzRequiredRoles)
+		if !o.hasAnyRole(userInfo, requiredRoles) {
+			zap.S().Warnw("user lacks required roles", "user", userInfo.Sub, "required", requiredRoles, "user_roles", userInfo.Roles)
+			return fmt.Errorf("access denied: user lacks required roles %v", requiredRoles)
+		}
+	}
+
+	// Check required OAuth scopes
+	if o.envVars.AuthzRequiredScopes != "" {
+		requiredScopes := o.parseCommaSeparated(o.envVars.AuthzRequiredScopes)
+		userScopes := o.parseCommaSeparated(userInfo.Scope)
+		if !o.hasAnyScope(userScopes, requiredScopes) {
+			zap.S().Warnw("user lacks required scopes", "user", userInfo.Sub, "required", requiredScopes, "user_scopes", userScopes)
+			return fmt.Errorf("access denied: user lacks required scopes %v", requiredScopes)
+		}
+	}
+
+	zap.S().Debugw("authorization check passed", "user", userInfo.Sub)
+	return nil
+}
+
+// hasAnyRole checks if the user has any of the required roles
+func (o *OIDCAuth) hasAnyRole(userInfo *UserInfo, requiredRoles []string) bool {
+	for _, required := range requiredRoles {
+		for _, userRole := range userInfo.Roles {
+			if strings.TrimSpace(userRole) == strings.TrimSpace(required) {
+				return true
+			}
+		}
+		// Also check groups as roles (some OIDC providers use groups instead of roles)
+		for _, userGroup := range userInfo.Groups {
+			if strings.TrimSpace(userGroup) == strings.TrimSpace(required) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// hasAnyScope checks if the user has any of the required OAuth scopes
+func (o *OIDCAuth) hasAnyScope(userScopes []string, requiredScopes []string) bool {
+	for _, required := range requiredScopes {
+		for _, userScope := range userScopes {
+			if strings.TrimSpace(userScope) == strings.TrimSpace(required) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// parseCommaSeparated splits a comma-separated string into a slice of trimmed strings
+func (o *OIDCAuth) parseCommaSeparated(input string) []string {
+	if input == "" {
+		return []string{}
+	}
+	parts := strings.Split(input, ",")
+	result := make([]string, len(parts))
+	for i, part := range parts {
+		result[i] = strings.TrimSpace(part)
+	}
+	return result
+}
+
+// extractStringSlice converts various claim formats to a string slice
+func (o *OIDCAuth) extractStringSlice(claim interface{}) ([]string, bool) {
+	switch v := claim.(type) {
+	case []string:
+		return v, true
+	case []interface{}:
+		result := make([]string, 0, len(v))
+		for _, item := range v {
+			if str, ok := item.(string); ok {
+				result = append(result, str)
+			}
+		}
+		return result, len(result) > 0
+	case string:
+		// Handle comma-separated string
+		return o.parseCommaSeparated(v), true
+	default:
+		return nil, false
+	}
+}
+
+// AuthorizationMiddleware adds authorization checks to the authentication middleware
+func (o *OIDCAuth) AuthorizationMiddleware(next http.Handler) http.Handler {
+	return o.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Check authorization after authentication
+		if err := o.CheckAuthorization(r); err != nil {
+			zap.S().Warnw("authorization failed", "error", err, "path", r.URL.Path)
+			http.Error(w, "Access Forbidden: "+err.Error(), http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
+	}))
 }
 
 func generateRandomString(length int) string {

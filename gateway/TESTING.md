@@ -24,6 +24,17 @@ cd gateway
 
 This sets up a full Keycloak server with proper login forms and user management.
 
+### Option 3: Authorization Testing (Role-Based Access Control)
+
+Test OAuth authorization with roles and scopes:
+
+```bash
+cd gateway
+./test-authorization.sh
+```
+
+This tests role-based access control with a mock user that has specific roles and scopes.
+
 ### 2. Manual Test Setup
 
 If you prefer to set things up manually:

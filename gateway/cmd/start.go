@@ -60,8 +60,13 @@ func Start() {
 	// Apply OIDC middleware if enabled
 	var handler http.Handler = proxyConfig
 	if proxyConfig.OIDCAuth != nil {
-		zap.S().Info("OIDC authentication enabled")
-		handler = proxyConfig.OIDCAuth.Middleware(proxyConfig)
+		if envVars.AuthzEnabled {
+			zap.S().Info("OIDC authentication and authorization enabled")
+			handler = proxyConfig.OIDCAuth.AuthorizationMiddleware(proxyConfig)
+		} else {
+			zap.S().Info("OIDC authentication enabled (no authorization)")
+			handler = proxyConfig.OIDCAuth.Middleware(proxyConfig)
+		}
 	}
 
 	mux.Handle("/", handler)

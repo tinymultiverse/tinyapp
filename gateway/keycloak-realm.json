@@ -81,6 +81,20 @@
             "access.token.claim": "true",
             "userinfo.token.claim": "true"
           }
+        },
+        {
+          "name": "roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
         }
       ]
     }
@@ -99,7 +113,8 @@
           "value": "password123",
           "temporary": false
         }
-      ]
+      ],
+      "realmRoles": ["user", "member", "admin"]
     },
     {
       "username": "alice",
@@ -114,7 +129,8 @@
           "value": "alice123",
           "temporary": false
         }
-      ]
+      ],
+      "realmRoles": ["user", "member"]
     },
     {
       "username": "bob",
@@ -129,7 +145,24 @@
           "value": "bob123",
           "temporary": false
         }
-      ]
+      ],
+      "realmRoles": ["user"]
     }
-  ]
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "Basic user role"
+      },
+      {
+        "name": "member", 
+        "description": "Member role with additional privileges"
+      },
+      {
+        "name": "admin",
+        "description": "Administrator role with full access"
+      }
+    ]
+  }
 }
