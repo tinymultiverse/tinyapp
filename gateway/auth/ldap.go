@@ -38,33 +38,6 @@ func NewLDAPAuthenticator(config internal.EnvVars) *LDAPAuthenticator {
 	}
 }
 
-// AuthenticateRequest checks if the request has valid LDAP credentials
-func (la *LDAPAuthenticator) AuthenticateRequest(req *http.Request) (string, error) {
-	if !la.config.LdapEnabled {
-		return "", nil // LDAP is disabled, skip authentication
-	}
-
-	// Extract credentials from Authorization header
-	username, password, err := la.extractCredentials(req)
-	if err != nil {
-		return "", err
-	}
-
-	// Authenticate against LDAP
-	authenticatedUser, err := la.authenticateLDAP(username, password)
-	if err != nil {
-		return "", err
-	}
-
-	// Check authorization
-	err = la.authorizeUser(authenticatedUser)
-	if err != nil {
-		return "", err
-	}
-
-	return authenticatedUser, nil
-}
-
 // Authenticate performs only LDAP authentication without authorization
 func (la *LDAPAuthenticator) Authenticate(req *http.Request) (string, error) {
 	if !la.config.LdapEnabled {
