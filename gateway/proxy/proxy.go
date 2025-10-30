@@ -71,25 +71,23 @@ func (p *proxyServerConfig) ServeHTTP(res http.ResponseWriter, req *http.Request
 
 	username, err := p.authenticator.Authenticate(req)
 	if err != nil {
-		zap.S().Warnw("authentication failed", "error", err, "remoteAddr", req.RemoteAddr)
+		zap.S().Warnw("authentication failed", "username", username, "error", err, "remoteAddr", req.RemoteAddr)
 		p.authenticator.RequireAuth(res)
 		return
-	}
-
-	if username != "" {
-		err = p.authenticator.AuthorizeUser(username)
-		if err != nil {
-			zap.S().Warnw("authorization failed", "username", username, "error", err, "remoteAddr", req.RemoteAddr)
-			p.sendUnauthorizedResponse(res, username)
-			return
-		}
 	}
 
 	// Set the authenticated username for metrics and logging
 	authenticatedUser := globalutil.AnyUserName
 	if username != "" {
 		authenticatedUser = username
-		zap.S().Debugw("authenticated and authorized user", "username", username)
+		zap.S().Debugw("authenticated user", "username", username)
+	}
+
+	err = p.authenticator.AuthorizeUser(username)
+	if err != nil {
+		zap.S().Warnw("authorization failed", "username", username, "error", err, "remoteAddr", req.RemoteAddr)
+		p.sendUnauthorizedResponse(res, username)
+		return
 	}
 
 	if p.SecondaryProxy != nil && strings.Contains(req.URL.Path, p.SecondaryTargetPattern) {

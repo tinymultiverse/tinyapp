@@ -99,14 +99,14 @@ func (la *LDAPAuthenticator) authenticateLDAP(username, password string) (string
 
 	userDN, err := la.searchUser(conn, username)
 	if err != nil {
-		return "", fmt.Errorf("user search failed: %w", err)
+		return username, fmt.Errorf("user search failed: %w", err)
 	}
 
 	// Authenticate user by binding with their credentials
 	err = conn.Bind(userDN, password)
 	if err != nil {
 		zap.S().Debugw("user authentication failed", "username", username, "error", err)
-		return "", fmt.Errorf("authentication failed")
+		return username, fmt.Errorf("authentication failed")
 	}
 
 	zap.S().Infow("user authenticated successfully", "username", username)
