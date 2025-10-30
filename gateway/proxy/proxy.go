@@ -55,7 +55,6 @@ func NewProxyServerConfig(envVars internal.EnvVars) (*proxyServerConfig, error) 
 		secondaryProxy = httputil.NewSingleHostReverseProxy(secondaryTargetUrl)
 	}
 
-	// Initialize LDAP authenticator
 	authenticator := auth.NewLDAPAuthenticator(envVars)
 
 	return &proxyServerConfig{
@@ -70,7 +69,6 @@ func NewProxyServerConfig(envVars internal.EnvVars) (*proxyServerConfig, error) 
 func (p *proxyServerConfig) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	zap.S().Debugw("got a request", "host", req.Host, "method", req.Method, "requestURL", req.URL.String())
 
-	// Step 1: Authenticate the user
 	username, err := p.authenticator.Authenticate(req)
 	if err != nil {
 		zap.S().Warnw("authentication failed", "error", err, "remoteAddr", req.RemoteAddr)
@@ -78,7 +76,6 @@ func (p *proxyServerConfig) ServeHTTP(res http.ResponseWriter, req *http.Request
 		return
 	}
 
-	// Step 2: Authorize the user (if authentication succeeded)
 	if username != "" {
 		err = p.authenticator.AuthorizeUser(username)
 		if err != nil {

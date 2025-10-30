@@ -41,16 +41,14 @@ func NewLDAPAuthenticator(config internal.EnvVars) *LDAPAuthenticator {
 // Authenticate performs only LDAP authentication without authorization
 func (la *LDAPAuthenticator) Authenticate(req *http.Request) (string, error) {
 	if !la.config.LdapEnabled {
-		return "", nil // LDAP is disabled, skip authentication
+		return "", nil
 	}
 
-	// Extract credentials from Authorization header
 	username, password, err := la.extractCredentials(req)
 	if err != nil {
 		return "", err
 	}
 
-	// Authenticate against LDAP
 	return la.authenticateLDAP(username, password)
 }
 
@@ -59,7 +57,6 @@ func (la *LDAPAuthenticator) AuthorizeUser(username string) error {
 	return la.authorizeUser(username)
 }
 
-// extractCredentials extracts username and password from Basic Auth header
 func (la *LDAPAuthenticator) extractCredentials(req *http.Request) (string, string, error) {
 	authHeader := req.Header.Get("Authorization")
 	if authHeader == "" {
@@ -70,14 +67,12 @@ func (la *LDAPAuthenticator) extractCredentials(req *http.Request) (string, stri
 		return "", "", fmt.Errorf("unsupported authorization type")
 	}
 
-	// Decode base64 credentials
 	encoded := strings.TrimPrefix(authHeader, "Basic ")
 	decoded, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {
 		return "", "", fmt.Errorf("invalid base64 encoding: %w", err)
 	}
 
-	// Split username and password
 	credentials := strings.SplitN(string(decoded), ":", 2)
 	if len(credentials) != 2 {
 		return "", "", fmt.Errorf("invalid credentials format")
@@ -88,14 +83,12 @@ func (la *LDAPAuthenticator) extractCredentials(req *http.Request) (string, stri
 
 // authenticateLDAP performs LDAP authentication
 func (la *LDAPAuthenticator) authenticateLDAP(username, password string) (string, error) {
-	// Connect to LDAP server
 	conn, err := la.connectLDAP()
 	if err != nil {
 		return "", fmt.Errorf("failed to connect to LDAP server: %w", err)
 	}
 	defer conn.Close()
 
-	// Bind with service account if configured
 	if la.config.LdapBindDN != "" {
 		err = conn.Bind(la.config.LdapBindDN, la.config.LdapBindPassword)
 		if err != nil {
@@ -104,7 +97,6 @@ func (la *LDAPAuthenticator) authenticateLDAP(username, password string) (string
 		}
 	}
 
-	// Search for user
 	userDN, err := la.searchUser(conn, username)
 	if err != nil {
 		return "", fmt.Errorf("user search failed: %w", err)
@@ -123,8 +115,15 @@ func (la *LDAPAuthenticator) authenticateLDAP(username, password string) (string
 
 // connectLDAP establishes connection to LDAP server
 func (la *LDAPAuthenticator) connectLDAP() (*ldap.Conn, error) {
-	address := fmt.Sprintf("%s:%d", la.config.LdapServer, la.config.LdapPort)
-	fmt.Println("Connecting to LDAP server at", address)
+	var scheme string
+	if la.config.LdapTLS {
+		scheme = "ldaps"
+	} else {
+		scheme = "ldap"
+	}
+
+	ldapURL := fmt.Sprintf("%s://%s:%d", scheme, la.config.LdapServer, la.config.LdapPort)
+	fmt.Println("Connecting to LDAP server at", ldapURL)
 
 	var conn *ldap.Conn
 	var err error
@@ -133,9 +132,9 @@ func (la *LDAPAuthenticator) connectLDAP() (*ldap.Conn, error) {
 		tlsConfig := &tls.Config{
 			ServerName: la.config.LdapServer,
 		}
-		conn, err = ldap.DialTLS("tcp", address, tlsConfig)
+		conn, err = ldap.DialURL(ldapURL, ldap.DialWithTLSConfig(tlsConfig))
 	} else {
-		conn, err = ldap.Dial("tcp", address)
+		conn, err = ldap.DialURL(ldapURL)
 	}
 
 	if err != nil {
@@ -147,23 +146,21 @@ func (la *LDAPAuthenticator) connectLDAP() (*ldap.Conn, error) {
 
 // searchUser searches for user in LDAP directory
 func (la *LDAPAuthenticator) searchUser(conn *ldap.Conn, username string) (string, error) {
-	// Build search filter
 	filter := fmt.Sprintf("(&(%s=%s)%s)",
 		la.config.LdapUserAttribute,
 		ldap.EscapeFilter(username),
 		la.config.LdapUserFilter)
 
-	// Perform search
 	searchRequest := ldap.NewSearchRequest(
 		la.config.LdapBaseDN,
 		ldap.ScopeWholeSubtree,
 		ldap.NeverDerefAliases,
-		1,     // Size limit
-		0,     // Time limit
-		false, // Types only
+		la.config.LdapSearchSizeLimit,
+		la.config.LdapSearchTimeLimit,
+		false,
 		filter,
-		[]string{"dn"}, // Attributes to return
-		nil,            // Controls
+		la.config.LdapReturnAttributes,
+		nil,
 	)
 
 	result, err := conn.Search(searchRequest)
@@ -192,11 +189,11 @@ func (la *LDAPAuthenticator) RequireAuth(w http.ResponseWriter) {
 // authorizeUser checks if the authenticated user is in the allowed users list
 func (la *LDAPAuthenticator) authorizeUser(username string) error {
 	if !la.config.AuthorizationEnabled {
-		return nil // Authorization is disabled, allow all authenticated users
+		return nil
 	}
 
 	if len(la.config.AllowedUsers) == 0 {
-		return nil // No restrictions if allowed users list is empty
+		return nil
 	}
 
 	for _, allowedUser := range la.config.AllowedUsers {

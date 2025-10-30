@@ -27,15 +27,18 @@ type EnvVars struct {
 	MetricsPath            string `env:"METRICS_PATH"`                // Required if METRICS_ENABLED is true
 	URLSubPath             string `env:"URL_SUB_PATH" envDefault:"/"`
 	// LDAP Configuration
-	LdapEnabled          bool     `env:"LDAP_ENABLED" envDefault:"true"`
-	LdapServer           string   `env:"LDAP_SERVER" envDefault:"openldap.tinyapp.svc.cluster.local"` // Required if LDAP_ENABLED is true
-	LdapPort             int      `env:"LDAP_PORT" envDefault:"389"`                                  // 389 for LDAP, 636 for LDAPS
-	LdapTLS              bool     `env:"LDAP_TLS" envDefault:"false"`                                 // Use TLS connection
-	LdapBaseDN           string   `env:"LDAP_BASE_DN" envDefault:"ou=people,dc=example,dc=org"`       // Required if LDAP_ENABLED is true
-	LdapBindDN           string   `env:"LDAP_BIND_DN" envDefault:"cn=admin,dc=example,dc=org"`        // Service account DN for searching
-	LdapBindPassword     string   `env:"LDAP_BIND_PASSWORD" envDefault:"adminpassword"`               // Service account password
-	LdapUserAttribute    string   `env:"LDAP_USER_ATTRIBUTE" envDefault:"uid"`                        // Attribute to search for username
-	LdapUserFilter       string   `env:"LDAP_USER_FILTER"`                                            // Additional filter for user search
-	AuthorizationEnabled bool     `env:"AUTHORIZATION_ENABLED" envDefault:"true"`
+	LdapEnabled          bool     `env:"LDAP_ENABLED" envDefault:"false"`
+	LdapServer           string   `env:"LDAP_SERVER"`                                           // Required if LDAP_ENABLED is true
+	LdapPort             int      `env:"LDAP_PORT" envDefault:"389"`                            // 389 for LDAP, 636 for LDAPS
+	LdapTLS              bool     `env:"LDAP_TLS" envDefault:"false"`                           // Use TLS connection
+	LdapBaseDN           string   `env:"LDAP_BASE_DN" envDefault:"ou=people,dc=example,dc=org"` // Required if LDAP_ENABLED is true
+	LdapBindDN           string   `env:"LDAP_BIND_DN" envDefault:"cn=admin,dc=example,dc=org"`  // Service account DN for searching
+	LdapBindPassword     string   `env:"LDAP_BIND_PASSWORD" envDefault:"adminpassword"`         // Service account password
+	LdapUserAttribute    string   `env:"LDAP_USER_ATTRIBUTE" envDefault:"uid"`                  // Attribute to search for username
+	LdapUserFilter       string   `env:"LDAP_USER_FILTER" envDefault:"(objectClass=person)"`    // Additional filter for user search
+	LdapSearchSizeLimit  int      `env:"LDAP_SEARCH_SIZE_LIMIT" envDefault:"1"`                 // Max search results
+	LdapSearchTimeLimit  int      `env:"LDAP_SEARCH_TIME_LIMIT" envDefault:"30"`                // Search timeout in seconds
+	LdapReturnAttributes []string `env:"LDAP_RETURN_ATTRIBUTES" envDefault:"dn"`                // Attributes to return from search
+	AuthorizationEnabled bool     `env:"AUTHORIZATION_ENABLED" envDefault:"false"`
 	AllowedUsers         []string `env:"ALLOWED_USERS" default:""` // Comma-separated list of allowed usernames
 }
