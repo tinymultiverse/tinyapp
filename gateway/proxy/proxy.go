@@ -26,7 +26,6 @@ import (
 	"github.com/tinymultiverse/tinyapp/gateway/auth"
 	"github.com/tinymultiverse/tinyapp/gateway/internal"
 	"github.com/tinymultiverse/tinyapp/gateway/util/metrics"
-	globalutil "github.com/tinymultiverse/tinyapp/util"
 	"go.uber.org/zap"
 )
 
@@ -76,12 +75,7 @@ func (p *proxyServerConfig) ServeHTTP(res http.ResponseWriter, req *http.Request
 		return
 	}
 
-	// Set the authenticated username for metrics and logging
-	authenticatedUser := globalutil.AnyUserName
-	if username != "" {
-		authenticatedUser = username
-		zap.S().Debugw("authenticated user", "username", username)
-	}
+	zap.S().Infow("authenticated user", "username", username)
 
 	err = p.authenticator.AuthorizeUser(username)
 	if err != nil {
@@ -91,15 +85,15 @@ func (p *proxyServerConfig) ServeHTTP(res http.ResponseWriter, req *http.Request
 	}
 
 	if p.SecondaryProxy != nil && strings.Contains(req.URL.Path, p.SecondaryTargetPattern) {
-		zap.S().Debugw("routing to secondary proxy", "path", req.URL.Path, "user", authenticatedUser)
+		zap.S().Debugw("routing to secondary proxy", "path", req.URL.Path, "user", username)
 		p.SecondaryProxy.ServeHTTP(res, req)
 		return
 	}
 
 	// Only increment user count if the request URL is app homepage
 	if path.Clean(req.URL.Path) == path.Clean(p.URLSubPath) {
-		zap.S().Infow("Incrementing user count", "user", authenticatedUser)
-		metrics.UsernameCounter.WithLabelValues(authenticatedUser).Inc()
+		zap.S().Infow("Incrementing user count", "user", username)
+		metrics.UsernameCounter.WithLabelValues(username).Inc()
 	}
 
 	p.Proxy.ServeHTTP(res, req)
