@@ -55,7 +55,7 @@ type UserInfo struct {
 	EmailVerified     bool     `json:"email_verified"`
 	PreferredUsername string   `json:"preferred_username"`
 	Roles             []string `json:"roles"`  // User roles for authorization
-	Scope             string   `json:"scope"`  // OAuth scopes
+	Scopes            []string `json:"scopes"` // OAuth scopes
 	Groups            []string `json:"groups"` // User groups (alternative to roles)
 }
 
@@ -222,7 +222,7 @@ func (o *OIDCAuth) handleCallback(w http.ResponseWriter, r *http.Request) {
 		zap.S().Warnw("failed to extract additional claims", "error", err)
 	} else {
 		zap.S().Debugw("all JWT claims", "claims", allClaims)
-		
+
 		// Extract roles from custom claim
 		roleClaim := o.envVars.AuthzRoleClaim
 		zap.S().Debugw("looking for role claim", "claim_name", roleClaim)
@@ -252,10 +252,37 @@ func (o *OIDCAuth) handleCallback(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Extract scope claim for OAuth scopes
-		if scopeClaim, exists := allClaims[o.envVars.AuthzScopeClaim]; exists {
-			if scope, ok := scopeClaim.(string); ok {
-				userInfo.Scope = scope
+		scopeClaim := o.envVars.AuthzScopeClaim
+		zap.S().Debugw("looking for scope claim", "claim_name", scopeClaim)
+		if scopeValue, exists := allClaims[scopeClaim]; exists {
+			zap.S().Debugw("found scope claim", "claim_name", scopeClaim, "value", scopeValue, "type", fmt.Sprintf("%T", scopeValue))
+
+			// Handle different scope formats
+			if scopes, ok := o.extractStringSlice(scopeValue); ok {
+				// Array format: ["read", "write", "admin"]
+				userInfo.Scopes = scopes
+				zap.S().Debugw("extracted scopes as array", "scopes", scopes)
+			} else if scope, ok := scopeValue.(string); ok {
+				// String format: "read write admin" or single scope
+				if strings.Contains(scope, " ") {
+					// Space-separated string
+					userInfo.Scopes = strings.Fields(scope)
+				} else {
+					// Single scope
+					userInfo.Scopes = []string{scope}
+				}
+				zap.S().Debugw("extracted scopes as string", "scopes", userInfo.Scopes)
+			} else {
+				zap.S().Warnw("failed to extract scopes from claim", "claim_name", scopeClaim, "value", scopeValue)
 			}
+		} else {
+			zap.S().Warnw("scope claim not found in token", "claim_name", scopeClaim, "available_claims", func() []string {
+				keys := make([]string, 0, len(allClaims))
+				for k := range allClaims {
+					keys = append(keys, k)
+				}
+				return keys
+			}())
 		}
 	}
 
@@ -264,7 +291,7 @@ func (o *OIDCAuth) handleCallback(w http.ResponseWriter, r *http.Request) {
 		"email", userInfo.Email,
 		"roles", userInfo.Roles,
 		"groups", userInfo.Groups,
-		"scope", userInfo.Scope)
+		"scope", userInfo.Scopes)
 
 	// Create session
 	sessionData := SessionData{
@@ -347,17 +374,17 @@ func (o *OIDCAuth) GetUserInfo(r *http.Request) (*UserInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("session not found")
 	}
-
+	fmt.Println(sessionCookie)
 	sessionJSON, err := base64.StdEncoding.DecodeString(sessionCookie.Value)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode session: %w", err)
 	}
-
+	fmt.Println(string(sessionJSON))
 	var sessionData SessionData
 	if err := json.Unmarshal(sessionJSON, &sessionData); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal session: %w", err)
 	}
-
+	fmt.Println(sessionData)
 	return &sessionData.UserInfo, nil
 }
 
@@ -372,18 +399,10 @@ func (o *OIDCAuth) CheckAuthorization(r *http.Request) error {
 		return fmt.Errorf("authorization failed: %w", err)
 	}
 
-	// Check if user has admin role (bypasses all other checks)
-	if o.envVars.AuthzAdminRoles != "" {
-		adminRoles := o.parseCommaSeparated(o.envVars.AuthzAdminRoles)
-		if o.hasAnyRole(userInfo, adminRoles) {
-			zap.S().Debugw("user has admin role, bypassing authorization checks", "user", userInfo.Sub)
-			return nil
-		}
-	}
-
 	// Check required roles
 	if o.envVars.AuthzRequiredRoles != "" {
 		requiredRoles := o.parseCommaSeparated(o.envVars.AuthzRequiredRoles)
+		fmt.Println("User Roles:", userInfo.Roles, "Required Roles:", requiredRoles)
 		if !o.hasAnyRole(userInfo, requiredRoles) {
 			zap.S().Warnw("user lacks required roles", "user", userInfo.Sub, "required", requiredRoles, "user_roles", userInfo.Roles)
 			return fmt.Errorf("access denied: user lacks required roles %v", requiredRoles)
@@ -393,7 +412,8 @@ func (o *OIDCAuth) CheckAuthorization(r *http.Request) error {
 	// Check required OAuth scopes
 	if o.envVars.AuthzRequiredScopes != "" {
 		requiredScopes := o.parseCommaSeparated(o.envVars.AuthzRequiredScopes)
-		userScopes := o.parseCommaSeparated(userInfo.Scope)
+		userScopes := userInfo.Scopes // o.parseCommaSeparated(userInfo.Scopes)
+		fmt.Println("User Scopes:", userScopes, "Required Scopes:", requiredScopes)
 		if !o.hasAnyScope(userScopes, requiredScopes) {
 			zap.S().Warnw("user lacks required scopes", "user", userInfo.Sub, "required", requiredScopes, "user_scopes", userScopes)
 			return fmt.Errorf("access denied: user lacks required scopes %v", requiredScopes)

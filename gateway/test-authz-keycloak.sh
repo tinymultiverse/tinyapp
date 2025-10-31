@@ -69,7 +69,7 @@ export AUTHZ_ENABLED=true
 export AUTHZ_REQUIRED_ROLES=user,member
 export AUTHZ_REQUIRED_SCOPES=read
 export AUTHZ_ROLE_CLAIM=roles
-export AUTHZ_SCOPE_CLAIM=scope
+export AUTHZ_SCOPE_CLAIM=scopes
 export AUTHZ_ADMIN_ROLES=admin
 export LOG_LEVEL=debug
 

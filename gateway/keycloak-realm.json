@@ -95,6 +95,21 @@
             "jsonType.label": "String",
             "multivalued": "true"
           }
+        },
+        {
+          "name": "scopes",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "claim.name": "scopes",
+            "user.attribute": "scopes",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
         }
       ]
     }
@@ -107,6 +122,9 @@
       "firstName": "Test",
       "lastName": "User",
       "email": "test@example.com",
+      "attributes": {
+        "scopes": ["read", "write", "admin", "delete"]
+      },
       "credentials": [
         {
           "type": "password",
@@ -123,6 +141,9 @@
       "firstName": "Alice",
       "lastName": "Smith",
       "email": "alice@example.com",
+      "attributes": {
+        "scopes": ["read", "write"]
+      },
       "credentials": [
         {
           "type": "password",
