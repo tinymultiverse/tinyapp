@@ -28,7 +28,7 @@ type EnvVars struct {
 	URLSubPath             string `env:"URL_SUB_PATH" envDefault:"/"`
 
 	// OIDC Configuration
-	OIDCEnabled      bool   `env:"OIDC_ENABLED" envDefault:"false"`
+	OIDCEnabled      bool   `env:"OIDC_ENABLED" envDefault:"true"`
 	OIDCIssuerURL    string `env:"OIDC_ISSUER_URL"`    // Required if OIDC_ENABLED is true
 	OIDCClientID     string `env:"OIDC_CLIENT_ID"`     // Required if OIDC_ENABLED is true
 	OIDCClientSecret string `env:"OIDC_CLIENT_SECRET"` // Required if OIDC_ENABLED is true
