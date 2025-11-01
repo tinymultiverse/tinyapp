@@ -34,7 +34,7 @@ type proxyServerConfig struct {
 	SecondaryProxy         *httputil.ReverseProxy
 	SecondaryTargetPattern string
 	URLSubPath             string
-	authenticator          *auth.LDAPAuthenticator
+	authenticator          *auth.LDAPAuthNZ
 }
 
 func NewProxyServerConfig(envVars internal.EnvVars) (*proxyServerConfig, error) {
@@ -54,7 +54,7 @@ func NewProxyServerConfig(envVars internal.EnvVars) (*proxyServerConfig, error) 
 		secondaryProxy = httputil.NewSingleHostReverseProxy(secondaryTargetUrl)
 	}
 
-	authenticator := auth.NewLDAPAuthenticator(envVars)
+	authenticator := auth.NewLDAPAuthNZ(envVars)
 
 	return &proxyServerConfig{
 		Proxy:                  proxy,

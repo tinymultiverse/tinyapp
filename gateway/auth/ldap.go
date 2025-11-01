@@ -28,23 +28,23 @@ import (
 	"go.uber.org/zap"
 )
 
-type LDAPAuthenticator struct {
+type LDAPAuthNZ struct {
 	config internal.EnvVars
 }
 
-func NewLDAPAuthenticator(config internal.EnvVars) *LDAPAuthenticator {
-	return &LDAPAuthenticator{
+func NewLDAPAuthNZ(config internal.EnvVars) *LDAPAuthNZ {
+	return &LDAPAuthNZ{
 		config: config,
 	}
 }
 
-// Authenticate performs only LDAP authentication without authorization
-func (la *LDAPAuthenticator) Authenticate(req *http.Request) (string, error) {
+// Authenticate performs LDAP authentication
+func (la *LDAPAuthNZ) Authenticate(req *http.Request) (string, error) {
 	if !la.config.LdapEnabled {
 		return "", nil
 	}
 
-	username, password, err := la.extractCredentials(req)
+	username, password, err := extractCredentials(req)
 	if err != nil {
 		return "", err
 	}
@@ -53,11 +53,11 @@ func (la *LDAPAuthenticator) Authenticate(req *http.Request) (string, error) {
 }
 
 // AuthorizeUser checks if the authenticated user is in the allowed users list
-func (la *LDAPAuthenticator) AuthorizeUser(username string) error {
+func (la *LDAPAuthNZ) AuthorizeUser(username string) error {
 	return la.authorizeUser(username)
 }
 
-func (la *LDAPAuthenticator) extractCredentials(req *http.Request) (string, string, error) {
+func extractCredentials(req *http.Request) (string, string, error) {
 	authHeader := req.Header.Get("Authorization")
 	if authHeader == "" {
 		return "", "", fmt.Errorf("missing Authorization header")
@@ -82,7 +82,7 @@ func (la *LDAPAuthenticator) extractCredentials(req *http.Request) (string, stri
 }
 
 // authenticateLDAP performs LDAP authentication
-func (la *LDAPAuthenticator) authenticateLDAP(username, password string) (string, error) {
+func (la *LDAPAuthNZ) authenticateLDAP(username, password string) (string, error) {
 	conn, err := la.connectLDAP()
 	if err != nil {
 		return "", fmt.Errorf("failed to connect to LDAP server: %w", err)
@@ -92,7 +92,6 @@ func (la *LDAPAuthenticator) authenticateLDAP(username, password string) (string
 	if la.config.LdapBindDN != "" {
 		err = conn.Bind(la.config.LdapBindDN, la.config.LdapBindPassword)
 		if err != nil {
-			zap.S().Errorw("failed to bind with service account", "error", err)
 			return "", fmt.Errorf("LDAP service account bind failed")
 		}
 	}
@@ -105,7 +104,6 @@ func (la *LDAPAuthenticator) authenticateLDAP(username, password string) (string
 	// Authenticate user by binding with their credentials
 	err = conn.Bind(userDN, password)
 	if err != nil {
-		zap.S().Debugw("user authentication failed", "username", username, "error", err)
 		return username, fmt.Errorf("authentication failed")
 	}
 
@@ -114,7 +112,7 @@ func (la *LDAPAuthenticator) authenticateLDAP(username, password string) (string
 }
 
 // connectLDAP establishes connection to LDAP server
-func (la *LDAPAuthenticator) connectLDAP() (*ldap.Conn, error) {
+func (la *LDAPAuthNZ) connectLDAP() (*ldap.Conn, error) {
 	var scheme string
 	if la.config.LdapTLS {
 		scheme = "ldaps"
@@ -123,7 +121,6 @@ func (la *LDAPAuthenticator) connectLDAP() (*ldap.Conn, error) {
 	}
 
 	ldapURL := fmt.Sprintf("%s://%s:%d", scheme, la.config.LdapServer, la.config.LdapPort)
-	fmt.Println("Connecting to LDAP server at", ldapURL)
 
 	var conn *ldap.Conn
 	var err error
@@ -145,7 +142,7 @@ func (la *LDAPAuthenticator) connectLDAP() (*ldap.Conn, error) {
 }
 
 // searchUser searches for user in LDAP directory
-func (la *LDAPAuthenticator) searchUser(conn *ldap.Conn, username string) (string, error) {
+func (la *LDAPAuthNZ) searchUser(conn *ldap.Conn, username string) (string, error) {
 	filter := fmt.Sprintf("(&(%s=%s)%s)",
 		la.config.LdapUserAttribute,
 		ldap.EscapeFilter(username),
@@ -180,14 +177,14 @@ func (la *LDAPAuthenticator) searchUser(conn *ldap.Conn, username string) (strin
 }
 
 // RequireAuth is a middleware that sends 401 with WWW-Authenticate header
-func (la *LDAPAuthenticator) RequireAuth(w http.ResponseWriter) {
+func (la *LDAPAuthNZ) RequireAuth(w http.ResponseWriter) {
 	w.Header().Set("WWW-Authenticate", `Basic realm="LDAP Authentication"`)
 	w.WriteHeader(http.StatusUnauthorized)
 	w.Write([]byte("Unauthorized"))
 }
 
 // authorizeUser checks if the authenticated user is in the allowed users list
-func (la *LDAPAuthenticator) authorizeUser(username string) error {
+func (la *LDAPAuthNZ) authorizeUser(username string) error {
 	if !la.config.AuthorizationEnabled {
 		return nil
 	}
@@ -203,6 +200,5 @@ func (la *LDAPAuthenticator) authorizeUser(username string) error {
 		}
 	}
 
-	zap.S().Warnw("user not in allowed users list", "username", username, "allowedUsers", la.config.AllowedUsers)
 	return fmt.Errorf("user not authorized")
 }
