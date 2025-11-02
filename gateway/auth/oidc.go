@@ -60,8 +60,12 @@ type UserInfo struct {
 }
 
 type SessionData struct {
-	UserInfo  UserInfo  `json:"user_info"`
-	ExpiresAt time.Time `json:"expires_at"`
+	UserInfo     UserInfo  `json:"user_info"`
+	AccessToken  string    `json:"access_token"`
+	RefreshToken string    `json:"refresh_token,omitempty"`
+	TokenType    string    `json:"token_type"`
+	ExpiresAt    time.Time `json:"expires_at"`
+	Scopes       []string  `json:"token_scopes"` // Scopes granted by the user to this app
 }
 
 func NewOIDCAuth(envVars internal.EnvVars) (*OIDCAuth, error) {
@@ -293,11 +297,22 @@ func (o *OIDCAuth) handleCallback(w http.ResponseWriter, r *http.Request) {
 		"groups", userInfo.Groups,
 		"scope", userInfo.Scopes)
 
-	// Create session
+	// Create session with OAuth tokens for delegation
 	sessionData := SessionData{
-		UserInfo:  userInfo,
-		ExpiresAt: idToken.Expiry,
+		UserInfo:     userInfo,
+		AccessToken:  oauth2Token.AccessToken,
+		RefreshToken: oauth2Token.RefreshToken,
+		TokenType:    oauth2Token.TokenType,
+		ExpiresAt:    oauth2Token.Expiry,
+		Scopes:       o.scopes, // Scopes granted to this app
 	}
+
+	zap.S().Debugw("storing OAuth session",
+		"user", userInfo.Sub,
+		"token_type", oauth2Token.TokenType,
+		"expires_at", oauth2Token.Expiry,
+		"has_refresh_token", oauth2Token.RefreshToken != "",
+		"granted_scopes", o.scopes)
 
 	sessionJSON, err := json.Marshal(sessionData)
 	if err != nil {
@@ -370,22 +385,116 @@ func (o *OIDCAuth) isAuthenticated(r *http.Request) bool {
 }
 
 func (o *OIDCAuth) GetUserInfo(r *http.Request) (*UserInfo, error) {
+	sessionData, err := o.getSessionData(r)
+	if err != nil {
+		return nil, err
+	}
+	return &sessionData.UserInfo, nil
+}
+
+// GetUserAccessToken returns the user's access token for making API calls on their behalf
+func (o *OIDCAuth) GetUserAccessToken(r *http.Request) (string, error) {
+	sessionData, err := o.getSessionData(r)
+	if err != nil {
+		return "", err
+	}
+
+	// Check if token is expired and try to refresh
+	if time.Now().After(sessionData.ExpiresAt) && sessionData.RefreshToken != "" {
+		zap.S().Debugw("access token expired, attempting refresh", "user", sessionData.UserInfo.Sub)
+
+		newToken, err := o.refreshToken(sessionData.RefreshToken)
+		if err != nil {
+			zap.S().Errorw("failed to refresh token", "error", err)
+			return "", fmt.Errorf("token expired and refresh failed: %w", err)
+		}
+
+		// Update session with new token
+		sessionData.AccessToken = newToken.AccessToken
+		sessionData.ExpiresAt = newToken.Expiry
+		if newToken.RefreshToken != "" {
+			sessionData.RefreshToken = newToken.RefreshToken
+		}
+
+		// TODO: Update the session cookie with new token data
+		zap.S().Infow("access token refreshed", "user", sessionData.UserInfo.Sub)
+	}
+
+	return sessionData.AccessToken, nil
+}
+
+// GetOAuth2Client returns a configured HTTP client that automatically includes the user's access token
+func (o *OIDCAuth) GetOAuth2Client(r *http.Request) (*http.Client, error) {
+	accessToken, err := o.GetUserAccessToken(r)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create OAuth2 token source for automatic token handling
+	tokenSource := oauth2.StaticTokenSource(&oauth2.Token{
+		AccessToken: accessToken,
+		TokenType:   "Bearer",
+	})
+
+	return oauth2.NewClient(r.Context(), tokenSource), nil
+}
+
+// MakeAPICall makes an HTTP request on behalf of the user using their access token
+func (o *OIDCAuth) MakeAPICall(r *http.Request, method, url string, body []byte) (*http.Response, error) {
+	client, err := o.GetOAuth2Client(r)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get OAuth client: %w", err)
+	}
+
+	var reqBody *strings.Reader
+	if body != nil {
+		reqBody = strings.NewReader(string(body))
+	}
+
+	req, err := http.NewRequestWithContext(r.Context(), method, url, reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	if body != nil && method != "GET" {
+		req.Header.Set("Content-Type", "application/json")
+	}
+
+	zap.S().Debugw("making API call on behalf of user",
+		"method", method,
+		"url", url,
+		"has_body", body != nil)
+
+	return client.Do(req)
+}
+
+// getSessionData is a helper to extract session data from request
+func (o *OIDCAuth) getSessionData(r *http.Request) (*SessionData, error) {
 	sessionCookie, err := r.Cookie(SessionTokenName)
 	if err != nil {
 		return nil, fmt.Errorf("session not found")
 	}
-	fmt.Println(sessionCookie)
+
 	sessionJSON, err := base64.StdEncoding.DecodeString(sessionCookie.Value)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode session: %w", err)
 	}
-	fmt.Println(string(sessionJSON))
+
 	var sessionData SessionData
 	if err := json.Unmarshal(sessionJSON, &sessionData); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal session: %w", err)
 	}
-	fmt.Println(sessionData)
-	return &sessionData.UserInfo, nil
+
+	return &sessionData, nil
+}
+
+// refreshToken attempts to refresh the user's access token
+func (o *OIDCAuth) refreshToken(refreshToken string) (*oauth2.Token, error) {
+	tokenSource := o.oauth2Config.TokenSource(context.Background(), &oauth2.Token{
+		RefreshToken: refreshToken,
+	})
+
+	return tokenSource.Token()
 }
 
 // CheckAuthorization verifies if the user has the required roles and scopes
