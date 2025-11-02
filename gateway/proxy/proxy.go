@@ -34,7 +34,7 @@ type proxyServerConfig struct {
 	SecondaryProxy         *httputil.ReverseProxy
 	SecondaryTargetPattern string
 	URLSubPath             string
-	authenticator          *auth.LDAPAuthNZ
+	authnz                 *auth.LDAPAuthNZ
 }
 
 func NewProxyServerConfig(envVars internal.EnvVars) (*proxyServerConfig, error) {
@@ -54,30 +54,30 @@ func NewProxyServerConfig(envVars internal.EnvVars) (*proxyServerConfig, error) 
 		secondaryProxy = httputil.NewSingleHostReverseProxy(secondaryTargetUrl)
 	}
 
-	authenticator := auth.NewLDAPAuthNZ(envVars)
+	authnz := auth.NewLDAPAuthNZ(envVars)
 
 	return &proxyServerConfig{
 		Proxy:                  proxy,
 		SecondaryProxy:         secondaryProxy,
 		SecondaryTargetPattern: envVars.SecondaryTargetPattern,
 		URLSubPath:             envVars.URLSubPath,
-		authenticator:          authenticator,
+		authnz:                 authnz,
 	}, nil
 }
 
 func (p *proxyServerConfig) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	zap.S().Debugw("got a request", "host", req.Host, "method", req.Method, "requestURL", req.URL.String())
 
-	username, err := p.authenticator.Authenticate(req)
+	username, err := p.authnz.Authenticate(req)
 	if err != nil {
 		zap.S().Warnw("authentication failed", "username", username, "error", err, "remoteAddr", req.RemoteAddr)
-		p.authenticator.RequireAuth(res)
+		p.authnz.RequireAuth(res)
 		return
 	}
 
 	zap.S().Infow("authenticated user", "username", username)
 
-	err = p.authenticator.AuthorizeUser(username)
+	err = p.authnz.AuthorizeUser(username)
 	if err != nil {
 		zap.S().Warnw("authorization failed", "username", username, "error", err, "remoteAddr", req.RemoteAddr)
 		p.sendUnauthorizedResponse(res, username)
