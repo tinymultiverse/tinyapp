@@ -359,6 +359,7 @@ type TinyAppDetail struct {
 	Env                 []*EnvVar              `protobuf:"bytes,9,rep,name=env,proto3" json:"env,omitempty"`
 	VolumeClaims        []*VolumeClaim         `protobuf:"bytes,10,rep,name=volume_claims,json=volumeClaims,proto3" json:"volume_claims,omitempty"`
 	MainVolumeClaimName string                 `protobuf:"bytes,11,opt,name=mainVolumeClaimName,proto3" json:"mainVolumeClaimName,omitempty"`
+	AllowedUsers        []string               `protobuf:"bytes,12,rep,name=allowedUsers,proto3" json:"allowedUsers,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -468,6 +469,13 @@ func (x *TinyAppDetail) GetMainVolumeClaimName() string {
 		return x.MainVolumeClaimName
 	}
 	return ""
+}
+
+func (x *TinyAppDetail) GetAllowedUsers() []string {
+	if x != nil {
+		return x.AllowedUsers
+	}
+	return nil
 }
 
 type TinyAppRelease struct {
@@ -1252,7 +1260,7 @@ const file_api_proto_rawDesc = "" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x14\n" +
 	"\x05token\x18\x02 \x01(\tR\x05token\x12\x10\n" +
 	"\x03ref\x18\x03 \x01(\tR\x03ref\x12\x15\n" +
-	"\x06is_tag\x18\x04 \x01(\bR\x05isTag\"\xf0\x03\n" +
+	"\x06is_tag\x18\x04 \x01(\bR\x05isTag\"\x94\x04\n" +
 	"\rTinyAppDetail\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12$\n" +
@@ -1267,7 +1275,8 @@ const file_api_proto_rawDesc = "" +
 	"\x03env\x18\t \x03(\v2\x16.tiny.app.proto.EnvVarR\x03env\x12@\n" +
 	"\rvolume_claims\x18\n" +
 	" \x03(\v2\x1b.tiny.app.proto.VolumeClaimR\fvolumeClaims\x120\n" +
-	"\x13mainVolumeClaimName\x18\v \x01(\tR\x13mainVolumeClaimName\"\x86\x01\n" +
+	"\x13mainVolumeClaimName\x18\v \x01(\tR\x13mainVolumeClaimName\x12\"\n" +
+	"\fallowedUsers\x18\f \x03(\tR\fallowedUsers\"\x86\x01\n" +
 	"\x0eTinyAppRelease\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\aapp_url\x18\x02 \x01(\tR\x06appUrl\x12.\n" +

@@ -106,6 +106,7 @@ message TinyAppDetail {
     repeated EnvVar env = 9;
     repeated VolumeClaim volume_claims = 10;
     string mainVolumeClaimName = 11;
+    repeated string allowedUsers = 12;
 }
 
 message TinyAppRelease {

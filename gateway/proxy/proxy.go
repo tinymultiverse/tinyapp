@@ -23,9 +23,9 @@ import (
 	"path"
 	"strings"
 
+	"github.com/tinymultiverse/tinyapp/gateway/auth"
 	"github.com/tinymultiverse/tinyapp/gateway/internal"
 	"github.com/tinymultiverse/tinyapp/gateway/util/metrics"
-	globalutil "github.com/tinymultiverse/tinyapp/util"
 	"go.uber.org/zap"
 )
 
@@ -34,6 +34,7 @@ type proxyServerConfig struct {
 	SecondaryProxy         *httputil.ReverseProxy
 	SecondaryTargetPattern string
 	URLSubPath             string
+	authnz                 *auth.LDAPAuthNZ
 }
 
 func NewProxyServerConfig(envVars internal.EnvVars) (*proxyServerConfig, error) {
@@ -53,29 +54,74 @@ func NewProxyServerConfig(envVars internal.EnvVars) (*proxyServerConfig, error) 
 		secondaryProxy = httputil.NewSingleHostReverseProxy(secondaryTargetUrl)
 	}
 
+	authnz := auth.NewLDAPAuthNZ(envVars)
+
 	return &proxyServerConfig{
 		Proxy:                  proxy,
 		SecondaryProxy:         secondaryProxy,
 		SecondaryTargetPattern: envVars.SecondaryTargetPattern,
 		URLSubPath:             envVars.URLSubPath,
+		authnz:                 authnz,
 	}, nil
 }
 
 func (p *proxyServerConfig) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	zap.S().Debugw("got a request", "host", req.Host, "method", req.Method, "requestURL", req.URL.String())
 
+	username, err := p.authnz.Authenticate(req)
+	if err != nil {
+		zap.S().Warnw("authentication failed", "username", username, "error", err, "remoteAddr", req.RemoteAddr)
+		p.authnz.RequireAuth(res)
+		return
+	}
+
+	zap.S().Infow("authenticated user", "username", username)
+
+	err = p.authnz.AuthorizeUser(username)
+	if err != nil {
+		zap.S().Warnw("authorization failed", "username", username, "error", err, "remoteAddr", req.RemoteAddr)
+		p.sendUnauthorizedResponse(res, username)
+		return
+	}
+
 	if p.SecondaryProxy != nil && strings.Contains(req.URL.Path, p.SecondaryTargetPattern) {
-		zap.S().Debugw("routing to secondary proxy", "path", req.URL.Path)
+		zap.S().Debugw("routing to secondary proxy", "path", req.URL.Path, "user", username)
 		p.SecondaryProxy.ServeHTTP(res, req)
 		return
 	}
 
 	// Only increment user count if the request URL is app homepage
 	if path.Clean(req.URL.Path) == path.Clean(p.URLSubPath) {
-		zap.S().Info("Incrementing user count")
-		// TODO Once integrated with OAuth, get actual username from auth server
-		metrics.UsernameCounter.WithLabelValues(globalutil.AnyUserName).Inc()
+		zap.S().Infow("Incrementing user count", "user", username)
+		metrics.UsernameCounter.WithLabelValues(username).Inc()
 	}
 
 	p.Proxy.ServeHTTP(res, req)
+}
+
+// sendUnauthorizedResponse sends an HTML response for unauthorized users
+func (p *proxyServerConfig) sendUnauthorizedResponse(res http.ResponseWriter, username string) {
+	res.Header().Set("Content-Type", "text/html")
+	res.WriteHeader(http.StatusForbidden)
+	html := `<!DOCTYPE html>
+<html>
+<head>
+    <title>Access Denied</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 50px; text-align: center; }
+        .container { max-width: 500px; margin: 0 auto; }
+        h1 { color: #d32f2f; }
+        p { color: #666; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Access Denied</h1>
+        <p>You do not have access to this app.</p>
+        <p>User: ` + username + `</p>
+        <p>Please contact your administrator if you believe this is an error.</p>
+    </div>
+</body>
+</html>`
+	res.Write([]byte(html))
 }
