@@ -26,4 +26,20 @@ type EnvVars struct {
 	MetricsPort            string `env:"METRICS_PORT"` // Required if METRICS_ENABLED is true
 	MetricsPath            string `env:"METRICS_PATH"` // Required if METRICS_ENABLED is true
 	URLSubPath             string `env:"URL_SUB_PATH" envDefault:"/"`
+
+	// OIDC Configuration
+	OIDCEnabled      bool   `env:"OIDC_ENABLED" envDefault:"true"`
+	OIDCIssuerURL    string `env:"OIDC_ISSUER_URL" envDefault:"http://localhost:9000/realms/tinyapp"`  // Required if OIDC_ENABLED is true
+	OIDCClientID     string `env:"OIDC_CLIENT_ID" envDefault:"tinyapp-gateway"`                        // Required if OIDC_ENABLED is true
+	OIDCClientSecret string `env:"OIDC_CLIENT_SECRET" envDefault:"gateway-secret-123"`                 // Required if OIDC_ENABLED is true
+	OIDCRedirectURL  string `env:"OIDC_REDIRECT_URL" envDefault:"http://localhost:8005/auth/callback"` // Required if OIDC_ENABLED is true
+	OIDCScopes       string `env:"OIDC_SCOPES" envDefault:"openid,profile,email"`
+
+	// Authorization Configuration
+	AuthzEnabled        bool   `env:"AUTHZ_ENABLED" envDefault:"true"`               // Enable role-based authorization
+	AuthzRequiredRoles  string `env:"AUTHZ_REQUIRED_ROLES" envDefault:"user,member"` // Comma-separated list of required roles
+	AuthzRequiredScopes string `env:"AUTHZ_REQUIRED_SCOPES" envDefault:"read"`       // Comma-separated list of required OAuth scopes
+	AuthzRoleClaim      string `env:"AUTHZ_ROLE_CLAIM" envDefault:"roles"`           // JWT claim containing user roles
+	AuthzScopeClaim     string `env:"AUTHZ_SCOPE_CLAIM" envDefault:"scopes"`         // JWT claim containing OAuth scopes
+	AuthzAdminRoles     string `env:"AUTHZ_ADMIN_ROLES" envDefault:"admin"`          // Comma-separated list of admin roles (bypass all checks)
 }
